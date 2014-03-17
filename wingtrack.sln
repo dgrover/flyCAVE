@@ -1,9 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wingtrack", "wingtrack\wingtrack.vcxproj", "{5C3FE708-31FD-41D7-AFE0-E1091D603311}"
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wingtrack", "wingtrack\wingtrack.vcproj", "{3439610B-E228-4AE6-80D1-C52512EDAF0D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +11,14 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5C3FE708-31FD-41D7-AFE0-E1091D603311}.Debug|Win32.ActiveCfg = Debug|Win32
-		{5C3FE708-31FD-41D7-AFE0-E1091D603311}.Debug|Win32.Build.0 = Debug|Win32
-		{5C3FE708-31FD-41D7-AFE0-E1091D603311}.Debug|x64.ActiveCfg = Debug|x64
-		{5C3FE708-31FD-41D7-AFE0-E1091D603311}.Debug|x64.Build.0 = Debug|x64
-		{5C3FE708-31FD-41D7-AFE0-E1091D603311}.Release|Win32.ActiveCfg = Release|Win32
-		{5C3FE708-31FD-41D7-AFE0-E1091D603311}.Release|Win32.Build.0 = Release|Win32
-		{5C3FE708-31FD-41D7-AFE0-E1091D603311}.Release|x64.ActiveCfg = Release|x64
-		{5C3FE708-31FD-41D7-AFE0-E1091D603311}.Release|x64.Build.0 = Release|x64
+		{3439610B-E228-4AE6-80D1-C52512EDAF0D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3439610B-E228-4AE6-80D1-C52512EDAF0D}.Debug|Win32.Build.0 = Debug|Win32
+		{3439610B-E228-4AE6-80D1-C52512EDAF0D}.Debug|x64.ActiveCfg = Debug|x64
+		{3439610B-E228-4AE6-80D1-C52512EDAF0D}.Debug|x64.Build.0 = Debug|x64
+		{3439610B-E228-4AE6-80D1-C52512EDAF0D}.Release|Win32.ActiveCfg = Release|Win32
+		{3439610B-E228-4AE6-80D1-C52512EDAF0D}.Release|Win32.Build.0 = Release|Win32
+		{3439610B-E228-4AE6-80D1-C52512EDAF0D}.Release|x64.ActiveCfg = Release|x64
+		{3439610B-E228-4AE6-80D1-C52512EDAF0D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
