@@ -15,8 +15,8 @@ using namespace cv::gpu;
 #define USEGPU 1
 
 FILE *FMF_In;
-unsigned __int32 fmfVersion, SizeY, SizeX, nframes;
-unsigned __int64 bytesPerChunk;
+unsigned __int32 fmfVersion, SizeY, SizeX;
+unsigned __int64 bytesPerChunk, nframes;
 long maxFramesInFile;
 char *buf;
 
@@ -27,8 +27,6 @@ MOG_GPU mog_gpu;
 
 Mat frame, fgmask;
 GpuMat d_frame, d_fgmask; 
-
-Error error;
 
 void PrintBuildInfo()
 {
@@ -100,13 +98,24 @@ void ReadFMFHeader()
 	buf = new char[bytesPerChunk];
 			
 	maxFramesInFile = (unsigned long int)nframes;
+
+	printf(
+		"\n*** VIDEO INFORMATION ***\n"
+		"FMF Version: %d\n"
+		"Height: %d\n"
+		"Width: %d\n"
+		"Frame Size: %d\n"
+		"Number of Frames: %d\n",
+		fmfVersion, 
+		SizeY, 
+		SizeX, 
+		bytesPerChunk-sizeof(double), 
+		nframes);
 }
 
 
 int ReadFMFFrame(unsigned long frameIndex)
 {
-	//IplImage *temp = cvCreateImage(cvSize(SizeX, SizeY), IPL_DEPTH_8U, 1);
-	
 	if((long)frameIndex>=0L && (long)frameIndex < maxFramesInFile)
 		fseek (FMF_In, frameIndex*bytesPerChunk + 28 , SEEK_SET );
 	else
@@ -115,7 +124,6 @@ int ReadFMFFrame(unsigned long frameIndex)
 	fread(buf, sizeof(double), 1, FMF_In);
 	fread(buf, bytesPerChunk-sizeof(double), 1, FMF_In);
 	
-	//memmove(temp->imageData, buf, bytesPerChunk);	
 	return 1;	
 }
 
@@ -128,6 +136,8 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	bool isVideo = false;
 	bool isCam = false;
+
+	Error error;
 
 	if (argc == 2)
 	{
@@ -307,15 +317,17 @@ int _tmain(int argc, _TCHAR* argv[])
 			// convert to OpenCV Mat
 			unsigned int rowBytes = (double)convertedImage.GetReceivedDataSize() / (double)convertedImage.GetRows();
 			Mat tFrame = Mat(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC1, convertedImage.GetData(), rowBytes);		
-			frame = tFrame;
+			frame = tFrame.clone();
 		
 		}
 		else if (isVideo)
 		{
 			int success = ReadFMFFrame(imageCount);
-			if (success){
-					Mat tFrame = Mat(SizeY, SizeX, CV_8UC1, buf, bytesPerChunk);
-					frame = tFrame;
+			
+			if (success)
+			{
+					Mat tFrame = Mat(SizeY, SizeX, CV_8UC1, buf, (bytesPerChunk-sizeof(double))/SizeY); //byte size of each row of frame
+					frame = tFrame.clone();
 			}
 			else
 				break;			
@@ -360,7 +372,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	else
 		CloseFMF();
 	
-	printf("Done! Press Enter to exit...\n");
+	printf("\nDone! Press Enter to exit...\n");
 	getchar();
 
 	return 0;
