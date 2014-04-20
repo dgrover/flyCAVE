@@ -137,6 +137,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	bool isVideo = false;
 	bool isCam = false;
 
+	bool track = false;
+
 	Error error;
 
 	if (argc == 2)
@@ -333,21 +335,33 @@ int _tmain(int argc, _TCHAR* argv[])
 				break;			
 		}
 		
-		if (USEGPU)
-		{
-			d_frame.upload(frame);
-			mog_gpu(d_frame, d_fgmask, 0.01f);
-			d_fgmask.download(fgmask);
-		}
-        else
-            mog_cpu(frame, fgmask, 0.01);
-		
-		imshow("raw image", frame);
-		imshow("FG mask", fgmask);
+		int width=frame.size().width;
+		int height=frame.size().height;
 
+		line(frame, Point((width/2)-50,height/2), Point((width/2)+50, height/2), 255);  //crosshair horizontal
+		line(frame, Point(width/2,(height/2)-50), Point(width/2,(height/2)+50), 255);  //crosshair vertical
+
+		imshow("raw image", frame);
+
+		if (track == true)
+		{
+			if (USEGPU)
+			{
+				d_frame.upload(frame);
+				mog_gpu(d_frame, d_fgmask, 0.01f);
+				d_fgmask.download(fgmask);
+			}
+			else
+				mog_cpu(frame, fgmask, 0.01);
+		
+			imshow("FG mask", fgmask);
+		}
+		
 		char key = waitKey(1);
 		
-		if (key == 27)
+		if (key == 13)			//press [ENTER] to start background subtraction
+			track = true;
+		else if (key == 27)		//press [ESC] to exit
 			break;
 	}
 
