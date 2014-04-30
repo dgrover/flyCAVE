@@ -282,7 +282,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="FlyCapture2.lib FlyCapture2GUI.lib opencv_core248.lib opencv_highgui248.lib opencv_video248.lib opencv_gpu248.lib"
+				AdditionalDependencies="opencv_core249.lib opencv_highgui249.lib opencv_video249.lib opencv_gpu249.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
