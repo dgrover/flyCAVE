@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "FlyCapture2.h"
+#include <omp.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -216,7 +217,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	bytesPerChunk = SizeY*SizeX + sizeof(double);
 	nframes = 0;
 
-	sprintf_s(fname, "E:\\Wing-%d%02d%02dT%02d%02d%02d.fmf", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+	sprintf_s(fname, "E:\\WingCam-%d%02d%02dT%02d%02d%02d.fmf", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 	remove(fname);
 		
 	FMF_Out = fopen(fname, "wb");
@@ -234,7 +235,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	fwrite(&bytesPerChunk, sizeof(unsigned __int64), 1, FMF_Out);
 	fwrite(&nframes, sizeof(unsigned __int64), 1, FMF_Out);
 
-	sprintf_s(flogname, "E:\\log-%d%02d%02dT%02d%02d%02d.txt", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+	sprintf_s(flogname, "E:\\WingLog-%d%02d%02dT%02d%02d%02d.txt", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 	remove(flogname);
 		
 	flog = fopen(flogname, "w");
@@ -264,6 +265,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	printf("Frame rate is %3.2f fps\n", frmRate.absValue);
+
+	//#pragma omp parallel for num_threads(numCameras)
+    //for (int i = 0; i < numCameras; i++ )
+    //{
+	//	nframesRun = RunSingleCamera(i, nframes);	
+    //}
 
 	for (int imageCount = 0; ; imageCount++)
 	{
@@ -298,28 +305,25 @@ int _tmain(int argc, _TCHAR* argv[])
 			fwrite(&stamp, sizeof(double), 1, FMF_Out);
 			fwrite(convertedImage.GetData(), convertedImage.GetDataSize(), 1, FMF_Out);
 
-			//fprintf(flog, "Frame %d - TimeStamp [%d %d]\n", nframes, timestamp.seconds, timestamp.microSeconds);
+			fprintf(flog, "Frame %d - TimeStamp [%d %d]\n", nframes, timestamp.seconds, timestamp.microSeconds);
 
 			nframes++;
 		}
 
-		if (!record)
-		{
-			// convert to OpenCV Mat
-			unsigned int rowBytes = (double)convertedImage.GetReceivedDataSize() / (double)convertedImage.GetRows();
-			Mat tFrame = Mat(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC1, convertedImage.GetData(), rowBytes);		
-			frame = tFrame.clone();
+		// convert to OpenCV Mat
+		unsigned int rowBytes = (double)convertedImage.GetReceivedDataSize() / (double)convertedImage.GetRows();
+		Mat tFrame = Mat(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC1, convertedImage.GetData(), rowBytes);		
+		frame = tFrame.clone();
 			
-			int width=frame.size().width;
-			int height=frame.size().height;
+		int width=frame.size().width;
+		int height=frame.size().height;
 
-			line(frame, Point((width/2)-50,height/2), Point((width/2)+50, height/2), 255);  //crosshair horizontal
-			line(frame, Point(width/2,(height/2)-50), Point(width/2,(height/2)+50), 255);  //crosshair vertical
+		line(frame, Point((width/2)-50,height/2), Point((width/2)+50, height/2), 255);  //crosshair horizontal
+		line(frame, Point(width/2,(height/2)-50), Point(width/2,(height/2)+50), 255);  //crosshair vertical
 
-			imshow("raw image", frame);
-			waitKey(1);
-		}
-		
+		imshow("raw image", frame);
+		waitKey(1);
+				
 		if (GetAsyncKeyState(VK_RETURN))			//press [ENTER] to start recording
 			record = true;
 		
