@@ -3,12 +3,16 @@
 
 #include "stdafx.h"
 #include "FlyCapture2.h"
-#include <omp.h>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
 
+#include <omp.h>
+#include <queue>
+
+//#include <opencv2/core/core.hpp>
+//#include <opencv2/highgui/highgui.hpp>
+
+using namespace std;
 using namespace FlyCapture2;
-using namespace cv;
+//using namespace cv;
 
 Camera cam;
 FILE *FMF_Out;
@@ -18,10 +22,8 @@ unsigned __int32 fmfVersion, SizeY, SizeX;
 unsigned __int64 bytesPerChunk, nframes;
 char *buf;
 
-double stamp;
-FlyCapture2::TimeStamp timestamp;
-
-Mat frame;
+queue <Image> rawImageStream;
+queue <TimeStamp> rawTimeStamps;
 
 char fname[100];
 char flogname[100];
@@ -87,6 +89,7 @@ void PrintError(Error error)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	bool stream = true;
 	bool record = false;
 
 	FMF_Out = new FILE;
@@ -264,72 +267,111 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
-	printf("Frame rate is %3.2f fps\n", frmRate.absValue);
+	printf("\nFrame rate %3.2f fps ...\n\n", frmRate.absValue);
 
-	//#pragma omp parallel for num_threads(numCameras)
-    //for (int i = 0; i < numCameras; i++ )
-    //{
-	//	nframesRun = RunSingleCamera(i, nframes);	
-    //}
+	printf("Streaming. Press [SPACE] to start recording\n\n");
 
-	for (int imageCount = 0; ; imageCount++)
+	//namedWindow( "raw image", WINDOW_AUTOSIZE );
+
+	#pragma omp parallel sections num_threads(2)
 	{
-		Image rawImage, convertedImage;
-			
-		// Retrieve an image
-		error = cam.RetrieveBuffer(&rawImage);
-		if (error != PGRERROR_OK)
+		#pragma omp section
 		{
-			PrintError(error);
-			continue;
-		}
+			while (stream)
+			{
+				Image rawImage, convertedImage;
 
-		//get image timestamp
-		timestamp = rawImage.GetTimeStamp();
-		stamp = (double) timestamp.seconds;
+				// Retrieve an image
+				error = cam.RetrieveBuffer(&rawImage);
+				if (error != PGRERROR_OK)
+				{
+					PrintError(error);
+					break;
+				}
 
-		// Convert the raw image
-		error = rawImage.Convert(PIXEL_FORMAT_MONO8, &convertedImage);
-		
-		if (error != PGRERROR_OK)
-		{
-			PrintError(error);
-			return -1;
-		}
+				//get image timestamp
+				TimeStamp timestamp = rawImage.GetTimeStamp();
 
-		if (record)
-		{
-			if (nframes == 0)
-				printf("\nRecording ...\n");
-		
-			fwrite(&stamp, sizeof(double), 1, FMF_Out);
-			fwrite(convertedImage.GetData(), convertedImage.GetDataSize(), 1, FMF_Out);
+				// Convert the raw image
+				error = rawImage.Convert(PIXEL_FORMAT_MONO8, &convertedImage);
+					
+				if (error != PGRERROR_OK)
+				{
+					PrintError(error);
+					break;
+				}
 
-			fprintf(flog, "Frame %d - TimeStamp [%d %d]\n", nframes, timestamp.seconds, timestamp.microSeconds);
-
-			nframes++;
-		}
-
-		// convert to OpenCV Mat
-		unsigned int rowBytes = (double)convertedImage.GetReceivedDataSize() / (double)convertedImage.GetRows();
-		Mat tFrame = Mat(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC1, convertedImage.GetData(), rowBytes);		
-		frame = tFrame.clone();
-			
-		int width=frame.size().width;
-		int height=frame.size().height;
-
-		line(frame, Point((width/2)-50,height/2), Point((width/2)+50, height/2), 255);  //crosshair horizontal
-		line(frame, Point(width/2,(height/2)-50), Point(width/2,(height/2)+50), 255);  //crosshair vertical
-
-		imshow("raw image", frame);
-		waitKey(1);
+				if (record)
+				{
+					#pragma omp critical
+					{
+						rawImageStream.push(convertedImage);
+						rawTimeStamps.push(timestamp);
+					}
+				}
 				
-		if (GetAsyncKeyState(VK_RETURN))			//press [ENTER] to start recording
-			record = true;
-		
-		if (GetAsyncKeyState(VK_ESCAPE))			//press [ESC] to exit
-				break;
+				if (GetAsyncKeyState(VK_SPACE))			//press [SPACE] to start recording
+					record = true;
+
+				if (GetAsyncKeyState(VK_ESCAPE))		//press [ESC] to exit
+					stream = false;
+
+			}
+		}
+
+		#pragma omp section
+		{
+			while (stream || !rawImageStream.empty())
+			{
+				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), nframes);
+
+				if (!rawImageStream.empty())
+				{
+					Image tImage = rawImageStream.front();
+					TimeStamp tStamp = rawTimeStamps.front();
+
+					double dtStamp = (double) tStamp.seconds;
+
+					fwrite(&dtStamp, sizeof(double), 1, FMF_Out);
+					fwrite(tImage.GetData(), tImage.GetDataSize(), 1, FMF_Out);
+
+					fprintf(flog, "Frame %d - TimeStamp [%d %d]\n", nframes, tStamp.seconds, tStamp.microSeconds);
+
+					nframes++;
+
+					#pragma omp critical
+					{
+						rawImageStream.pop();
+						rawTimeStamps.pop();
+					}
+				}
+			}
+		}
 	}
+
+	//#pragma omp section
+	//{
+	//	while (stream)
+	//	{
+	//		if (!dispImageStream.empty())
+	//		{
+	//			Image dImage = dispImageStream.front();
+	//			// convert to OpenCV Mat
+	//			unsigned int rowBytes = (double)dImage.GetReceivedDataSize() / (double)dImage.GetRows();
+	//			Mat frame = Mat(dImage.GetRows(), dImage.GetCols(), CV_8UC1, dImage.GetData(), rowBytes);		
+	//				
+	//			int width=frame.size().width;
+	//			int height=frame.size().height;
+
+	//			line(frame, Point((width/2)-50,height/2), Point((width/2)+50, height/2), 255);  //crosshair horizontal
+	//			line(frame, Point(width/2,(height/2)-50), Point(width/2,(height/2)+50), 255);  //crosshair vertical
+
+	//			//imshow("raw image", frame);
+	//			//waitKey(1);
+	//			dispImageStream.pop();
+	//		}
+	//	}
+	//}
 
 	// Stop capturing images
 	error = cam.StopCapture();
@@ -347,14 +389,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
-	if (record)
-	{
-		printf( "\nFinished grabbing %d images\n", nframes );
+	printf( "\nFinished writing %d images\n", nframes );
 
-		//seek to location in file where nframes is stored and replace
-		fseek (FMF_Out, 20, SEEK_SET );	
-		fwrite(&nframes, sizeof(unsigned __int64), 1, FMF_Out);
-	}
+	//seek to location in file where nframes is stored and replace
+	fseek (FMF_Out, 20, SEEK_SET );	
+	fwrite(&nframes, sizeof(unsigned __int64), 1, FMF_Out);
 
 	// close fmf file
 	fclose(FMF_Out);
@@ -374,3 +413,4 @@ int _tmain(int argc, _TCHAR* argv[])
 	return 0;
 }
 
+//opencv_core249.lib opencv_highgui249.lib
