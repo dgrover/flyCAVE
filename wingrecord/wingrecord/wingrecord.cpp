@@ -7,12 +7,12 @@
 #include <omp.h>
 #include <queue>
 
-//#include <opencv2/core/core.hpp>
-//#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 using namespace FlyCapture2;
-//using namespace cv;
+using namespace cv;
 
 Camera cam;
 FILE *FMF_Out;
@@ -23,6 +23,7 @@ unsigned __int64 bytesPerChunk, nframes;
 char *buf;
 
 queue <Image> rawImageStream;
+queue <Image> dispImageStream;
 queue <TimeStamp> rawTimeStamps;
 
 char fname[100];
@@ -271,15 +272,13 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("Streaming. Press [SPACE] to start recording\n\n");
 
-	//namedWindow( "raw image", WINDOW_AUTOSIZE );
-
-	#pragma omp parallel sections num_threads(2)
+	#pragma omp parallel sections num_threads(3)
 	{
 		#pragma omp section
 		{
 			while (stream)
 			{
-				Image rawImage, convertedImage;
+				Image rawImage, convertedImage, dispImage;
 
 				// Retrieve an image
 				error = cam.RetrieveBuffer(&rawImage);
@@ -300,6 +299,9 @@ int _tmain(int argc, _TCHAR* argv[])
 					PrintError(error);
 					break;
 				}
+
+				#pragma omp critical
+				dispImageStream.push(convertedImage);
 
 				if (record)
 				{
@@ -323,7 +325,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (stream || !rawImageStream.empty())
 			{
-				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), nframes);
+				printf("Display buffer size %d, Recording buffer size %d, Frames written %d\r", dispImageStream.size(), rawImageStream.size(), nframes);
 
 				if (!rawImageStream.empty())
 				{
@@ -347,31 +349,35 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 			}
 		}
+
+		#pragma omp section
+		{
+			while (stream)
+			{
+				if (!dispImageStream.empty())
+				{
+					Image dImage;
+					dImage.DeepCopy(&dispImageStream.back());
+					
+					// convert to OpenCV Mat
+					unsigned int rowBytes = (double)dImage.GetReceivedDataSize() / (double)dImage.GetRows();
+					Mat frame = Mat(dImage.GetRows(), dImage.GetCols(), CV_8UC1, dImage.GetData(), rowBytes);		
+						
+					int width=frame.size().width;
+					int height=frame.size().height;
+
+					line(frame, Point((width/2)-50,height/2), Point((width/2)+50, height/2), 255);  //crosshair horizontal
+					line(frame, Point(width/2,(height/2)-50), Point(width/2,(height/2)+50), 255);  //crosshair vertical
+
+					imshow("raw image", frame);
+					waitKey(1);
+					
+					#pragma omp critical
+					dispImageStream = queue<Image>();
+				}
+			}
+		}
 	}
-
-	//#pragma omp section
-	//{
-	//	while (stream)
-	//	{
-	//		if (!dispImageStream.empty())
-	//		{
-	//			Image dImage = dispImageStream.front();
-	//			// convert to OpenCV Mat
-	//			unsigned int rowBytes = (double)dImage.GetReceivedDataSize() / (double)dImage.GetRows();
-	//			Mat frame = Mat(dImage.GetRows(), dImage.GetCols(), CV_8UC1, dImage.GetData(), rowBytes);		
-	//				
-	//			int width=frame.size().width;
-	//			int height=frame.size().height;
-
-	//			line(frame, Point((width/2)-50,height/2), Point((width/2)+50, height/2), 255);  //crosshair horizontal
-	//			line(frame, Point(width/2,(height/2)-50), Point(width/2,(height/2)+50), 255);  //crosshair vertical
-
-	//			//imshow("raw image", frame);
-	//			//waitKey(1);
-	//			dispImageStream.pop();
-	//		}
-	//	}
-	//}
 
 	// Stop capturing images
 	error = cam.StopCapture();
@@ -389,8 +395,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
-	printf( "\nFinished writing %d images\n", nframes );
-
 	//seek to location in file where nframes is stored and replace
 	fseek (FMF_Out, 20, SEEK_SET );	
 	fwrite(&nframes, sizeof(unsigned __int64), 1, FMF_Out);
@@ -407,10 +411,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		remove(flogname);
 	}
 	
-	printf("\nDone! Press Enter to exit...\n");
+	printf("\n\nDone! Press Enter to exit...\n");
 	getchar();
 
 	return 0;
 }
-
-//opencv_core249.lib opencv_highgui249.lib
