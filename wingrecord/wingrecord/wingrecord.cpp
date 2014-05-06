@@ -268,7 +268,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
-	printf("\nFrame rate %3.2f fps ...\n\n", frmRate.absValue);
+	printf("Frame rate: %3.2f fps\n\n", frmRate.absValue);
 
 	printf("Streaming. Press [SPACE] to start recording\n\n");
 
@@ -325,7 +325,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (stream || !rawImageStream.empty())
 			{
-				printf("Display buffer size %d, Recording buffer size %d, Frames written %d\r", dispImageStream.size(), rawImageStream.size(), nframes);
+				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), nframes);
 
 				if (!rawImageStream.empty())
 				{
