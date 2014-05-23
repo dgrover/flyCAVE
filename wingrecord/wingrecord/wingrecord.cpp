@@ -140,6 +140,50 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
+	// Power on the camera
+	const unsigned int k_cameraPower = 0x610;
+	const unsigned int k_powerVal_on = 0x80000000;
+	error  = cam.WriteRegister( k_cameraPower, k_powerVal_on );
+	if (error != PGRERROR_OK)
+	{
+		PrintError( error );
+		return -1;
+	}
+
+	const unsigned int millisecondsToSleep = 100;
+	unsigned int regVal = 0;
+	unsigned int retries = 10;
+
+	// Wait for camera to complete power-up
+	do 
+	{
+#if defined(WIN32) || defined(WIN64)
+		Sleep(millisecondsToSleep);    
+#else
+		usleep(millisecondsToSleep * 1000);
+#endif
+		error = cam.ReadRegister(k_cameraPower, &regVal);
+		if (error == FlyCapture2::PGRERROR_TIMEOUT)
+		{
+			// ignore timeout errors, camera may not be responding to
+			// register reads during power-up
+		}
+		else if (error != FlyCapture2::PGRERROR_OK)
+		{
+			PrintError( error );
+			return -1;
+		}
+
+		retries--;
+	} while ((regVal & k_powerVal_on) == 0 && retries > 0);
+
+	// Check for timeout errors after retrying
+	if (error == FlyCapture2::PGRERROR_TIMEOUT)
+	{
+		PrintError( error );
+		return -1;
+	}
+
 	// Get the camera information
 	CameraInfo camInfo;
 	error = cam.GetCameraInfo(&camInfo);
@@ -416,6 +460,15 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (error != PGRERROR_OK)
 	{
 		PrintError(error);
+		return -1;
+	}
+
+	// Power off the camera
+	const unsigned int k_powerVal_off = 0x00000000;
+	error  = cam.WriteRegister( k_cameraPower, k_powerVal_off );
+	if (error != PGRERROR_OK)
+	{
+		PrintError( error );
 		return -1;
 	}
 
