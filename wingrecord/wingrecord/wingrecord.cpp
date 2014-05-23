@@ -214,6 +214,38 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
+	//Lower shutter speed for fast triggering
+	FlyCapture2::Property pProp;
+
+	pProp.type = SHUTTER;
+	pProp.absControl = true;
+	pProp.onePush = false;
+	pProp.onOff = true;
+	pProp.autoManualMode = false;
+	pProp.absValue = 0.006;
+
+	error = cam.SetProperty( &pProp );
+    if (error != PGRERROR_OK)
+    {
+		PrintError( error );
+        return -1;
+    }
+
+	//Cranking up the gain all the way
+	pProp.type = GAIN;
+	pProp.absControl = true;
+	pProp.onePush = false;
+	pProp.onOff = true;
+	pProp.autoManualMode = false;
+	pProp.absValue = 18.062;
+
+	error = cam.SetProperty( &pProp );
+    if (error != PGRERROR_OK)
+    {
+		PrintError( error );
+        return -1;
+    }
+
 	//settings for version 1.0 fmf header
 	fmfVersion = 1;
 	SizeY = fmt7ImageSettings.height;
@@ -258,17 +290,17 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
-	// Retrieve frame rate property
-	Property frmRate;
-	frmRate.type = FRAME_RATE;
-	error = cam.GetProperty(&frmRate);
-	if (error != PGRERROR_OK)
-	{
-		PrintError(error);
-		return -1;
-	}
+	//// Retrieve frame rate property
+	//Property frmRate;
+	//frmRate.type = FRAME_RATE;
+	//error = cam.GetProperty(&frmRate);
+	//if (error != PGRERROR_OK)
+	//{
+	//	PrintError(error);
+	//	return -1;
+	//}
 
-	printf("Frame rate: %3.2f fps\n\n", frmRate.absValue);
+	//printf("Frame rate: %3.2f fps\n\n", frmRate.absValue);
 
 	printf("Streaming. Press [SPACE] to start recording\n\n");
 
