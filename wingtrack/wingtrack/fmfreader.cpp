@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "fmfreader.h"
 
+using namespace cv;
+
 int FmfReader::Open(_TCHAR * fname)
 {
 	fp = fopen(fname, "rb");
@@ -67,9 +69,9 @@ int FmfReader::ReadFrame(unsigned long frameIndex)
 	return 1;	
 }
 
-cv::Mat FmfReader::ConvertToCvMat()
+Mat FmfReader::ConvertToCvMat()
 {
-	cv::Mat frame = cv::Mat(SizeY, SizeX, CV_8UC1, buf, (bytesPerChunk-sizeof(double))/SizeY); //byte size of each row of frame
+	Mat frame = Mat(SizeY, SizeX, CV_8UC1, buf, (bytesPerChunk-sizeof(double))/SizeY); //byte size of each row of frame
 	
 	return frame;
 }

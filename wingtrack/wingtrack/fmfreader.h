@@ -12,7 +12,7 @@ class FmfReader
 
 	public:
 
-		int Open(_TCHAR * fname);
+		int Open(_TCHAR *fname);
 		int Close();
 
 		void ReadHeader();
