@@ -30,7 +30,7 @@ int FmfReader::Close()
 	return 1;
 }
 
-void FmfReader::ReadHeader()
+int FmfReader::ReadHeader()
 {
 	fread(&fmfVersion, sizeof(unsigned __int32), 1, fp);
 	fread(&SizeY, sizeof(unsigned __int32), 1, fp);
@@ -54,6 +54,8 @@ void FmfReader::ReadHeader()
 		SizeX, 
 		bytesPerChunk-sizeof(double), 
 		nframes);
+
+	return 1;
 }
 
 int FmfReader::ReadFrame(unsigned long frameIndex)

@@ -42,10 +42,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		success = fin.ReadFrame(imageCount);
 			
 		if (success)
-		{
 			frame = fin.ConvertToCvMat();
-			//frame = tFrame.clone();
-		}
 		else
 			break;			
 		

@@ -15,7 +15,7 @@ class FmfReader
 		int Open(_TCHAR *fname);
 		int Close();
 
-		void ReadHeader();
+		int ReadHeader();
 		int ReadFrame(unsigned long frameIndex);
 		cv::Mat ConvertToCvMat();
 
