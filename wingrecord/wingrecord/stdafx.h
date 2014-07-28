@@ -11,6 +11,14 @@
 #include <tchar.h>
 #include <windows.h>
 
+#include "FlyCapture2.h"
+
+#include <omp.h>
+#include <queue>
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 
 
 // TODO: reference additional headers your program requires here

@@ -3,7 +3,7 @@
 
 using namespace cv;
 
-int FmfReader::Open(_TCHAR * fname)
+int FmfReader::Open(_TCHAR* fname)
 {
 	fp = fopen(fname, "rb");
 

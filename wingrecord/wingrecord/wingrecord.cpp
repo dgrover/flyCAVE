@@ -2,32 +2,17 @@
 //
 
 #include "stdafx.h"
-#include "FlyCapture2.h"
-
-#include <omp.h>
-#include <queue>
-
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "fmfwriter.h"
 
 using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
 
 Camera cam;
-FILE *FMF_Out;
-FILE *flog;
-
-unsigned __int32 fmfVersion, SizeY, SizeX;
-unsigned __int64 bytesPerChunk, nframes;
-char *buf;
 
 queue <Image> rawImageStream;
 queue <Image> dispImageStream;
 queue <TimeStamp> rawTimeStamps;
-
-char fname[100];
-char flogname[100];
 
 void PrintBuildInfo()
 {
@@ -90,15 +75,10 @@ void PrintError(Error error)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	FmfWriter fout;
+
 	bool stream = true;
-	bool record = false;
-
-	FMF_Out = new FILE;
-	flog = new FILE;
-
-	SYSTEMTIME st;
-	GetLocalTime(&st);
-
+	int success;
 	Error error;
 
 	const Mode k_fmt7Mode = MODE_0;
@@ -290,41 +270,13 @@ int _tmain(int argc, _TCHAR* argv[])
         return -1;
     }
 
-	//settings for version 1.0 fmf header
-	fmfVersion = 1;
-	SizeY = fmt7ImageSettings.height;
-	SizeX = fmt7ImageSettings.width;
-	bytesPerChunk = SizeY*SizeX + sizeof(double);
-	nframes = 0;
+	success = fout.Open();
 
-	sprintf_s(fname, "E:\\WingCam-%d%02d%02dT%02d%02d%02d.fmf", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
-	remove(fname);
-		
-	FMF_Out = fopen(fname, "wb");
-		
-	if(FMF_Out == NULL)
-	{
-		printf("\nError opening FMF writer. Recording terminated.");
+	if (!success)
 		return -1;
-	}
-		
-	//write FMF header data
-	fwrite(&fmfVersion, sizeof(unsigned __int32), 1, FMF_Out);
-	fwrite(&SizeY, sizeof(unsigned __int32), 1, FMF_Out);
-	fwrite(&SizeX, sizeof(unsigned __int32), 1, FMF_Out);
-	fwrite(&bytesPerChunk, sizeof(unsigned __int64), 1, FMF_Out);
-	fwrite(&nframes, sizeof(unsigned __int64), 1, FMF_Out);
 
-	sprintf_s(flogname, "E:\\WingLog-%d%02d%02dT%02d%02d%02d.txt", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
-	remove(flogname);
-		
-	flog = fopen(flogname, "w");
-		
-	if(flog == NULL)
-	{
-		printf("\nError creating log file. Recording terminated.");
-		return -1;
-	}
+	fout.InitHeader(fmt7ImageSettings.width, fmt7ImageSettings.height);
+	fout.WriteHeader();
 
 	// Start capturing images
 	error = cam.StartCapture();
@@ -379,7 +331,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				#pragma omp critical
 				dispImageStream.push(convertedImage);
 
-				if (record)
+				if (fout.record)
 				{
 					#pragma omp critical
 					{
@@ -389,7 +341,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 				
 				if (GetAsyncKeyState(VK_SPACE))			//press [SPACE] to start recording
-					record = true;
+					fout.record = true;
 
 				if (GetAsyncKeyState(VK_ESCAPE))		//press [ESC] to exit
 					stream = false;
@@ -401,21 +353,17 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (stream || !rawImageStream.empty())
 			{
-				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), nframes);
+				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), fout.nframes);
 
 				if (!rawImageStream.empty())
 				{
-					Image tImage = rawImageStream.front();
 					TimeStamp tStamp = rawTimeStamps.front();
+					Image tImage = rawImageStream.front();
+					
+					fout.WriteFrame(tStamp, tImage);
+					fout.WriteLog(tStamp);
 
-					double dtStamp = (double) tStamp.seconds;
-
-					fwrite(&dtStamp, sizeof(double), 1, FMF_Out);
-					fwrite(tImage.GetData(), tImage.GetDataSize(), 1, FMF_Out);
-
-					fprintf(flog, "Frame %d - TimeStamp [%d %d]\n", nframes, tStamp.seconds, tStamp.microSeconds);
-
-					nframes++;
+					fout.nframes++;
 
 					#pragma omp critical
 					{
@@ -480,21 +428,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
-	//seek to location in file where nframes is stored and replace
-	fseek (FMF_Out, 20, SEEK_SET );	
-	fwrite(&nframes, sizeof(unsigned __int64), 1, FMF_Out);
-
-	// close fmf file
-	fclose(FMF_Out);
-
-	//close log file
-	fclose(flog);
-	
-	if (!record)
-	{
-		remove(fname);
-		remove(flogname);
-	}
+	success = fout.Close();
 	
 	printf("\n\nDone! Press Enter to exit...\n");
 	getchar();
