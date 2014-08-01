@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "fmfwriter.h"
 
+using namespace std;
+using namespace FlyCapture2;
+
 FmfWriter::FmfWriter()
 {
 	record = false;

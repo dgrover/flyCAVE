@@ -1,9 +1,6 @@
 #ifndef FMFWRITER_H
 #define FMFWRITER_H
 
-//using namespace std;
-using namespace FlyCapture2;
-
 class FmfWriter
 {
 	private:
@@ -15,7 +12,7 @@ class FmfWriter
 
 		unsigned __int32 fmfVersion, SizeY, SizeX;
 		unsigned __int64 bytesPerChunk;
-		//char *buf;
+		char *buf;
 
 		
 	public:
@@ -29,8 +26,8 @@ class FmfWriter
 
 		void InitHeader(unsigned __int32 x, unsigned __int32 y);
 		void WriteHeader();
-		void WriteFrame(TimeStamp st, Image img);
-		void WriteLog(TimeStamp st);
+		void WriteFrame(FlyCapture2::TimeStamp st, FlyCapture2::Image img);
+		void WriteLog(FlyCapture2::TimeStamp st);
 		
 };
 
