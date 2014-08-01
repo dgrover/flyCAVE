@@ -204,22 +204,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	pProp.onePush = false;
 	pProp.onOff = true;
 	pProp.autoManualMode = false;
-	pProp.absValue = 0.006;
-
-	error = cam.SetProperty( &pProp );
-    if (error != PGRERROR_OK)
-    {
-		PrintError( error );
-        return -1;
-    }
-
-	//Cranking up the gain all the way
-	pProp.type = GAIN;
-	pProp.absControl = true;
-	pProp.onePush = false;
-	pProp.onOff = true;
-	pProp.autoManualMode = false;
-	pProp.absValue = 18.062;
+	pProp.absValue = 0.016;
 
 	error = cam.SetProperty( &pProp );
     if (error != PGRERROR_OK)
