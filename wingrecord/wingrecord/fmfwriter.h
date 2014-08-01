@@ -16,7 +16,6 @@ class FmfWriter
 
 		
 	public:
-		bool record;
 		unsigned __int64 nframes;
 
 		FmfWriter();

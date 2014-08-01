@@ -78,6 +78,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	FmfWriter fout;
 
 	bool stream = true;
+	bool record = false;
+
 	int success;
 	Error error;
 
@@ -117,50 +119,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (error != PGRERROR_OK)
 	{
 		PrintError(error);
-		return -1;
-	}
-
-	// Power on the camera
-	const unsigned int k_cameraPower = 0x610;
-	const unsigned int k_powerVal_on = 0x80000000;
-	error  = cam.WriteRegister( k_cameraPower, k_powerVal_on );
-	if (error != PGRERROR_OK)
-	{
-		PrintError( error );
-		return -1;
-	}
-
-	const unsigned int millisecondsToSleep = 100;
-	unsigned int regVal = 0;
-	unsigned int retries = 10;
-
-	// Wait for camera to complete power-up
-	do 
-	{
-#if defined(WIN32) || defined(WIN64)
-		Sleep(millisecondsToSleep);    
-#else
-		usleep(millisecondsToSleep * 1000);
-#endif
-		error = cam.ReadRegister(k_cameraPower, &regVal);
-		if (error == FlyCapture2::PGRERROR_TIMEOUT)
-		{
-			// ignore timeout errors, camera may not be responding to
-			// register reads during power-up
-		}
-		else if (error != FlyCapture2::PGRERROR_OK)
-		{
-			PrintError( error );
-			return -1;
-		}
-
-		retries--;
-	} while ((regVal & k_powerVal_on) == 0 && retries > 0);
-
-	// Check for timeout errors after retrying
-	if (error == FlyCapture2::PGRERROR_TIMEOUT)
-	{
-		PrintError( error );
 		return -1;
 	}
 
@@ -286,18 +244,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
-	//// Retrieve frame rate property
-	//Property frmRate;
-	//frmRate.type = FRAME_RATE;
-	//error = cam.GetProperty(&frmRate);
-	//if (error != PGRERROR_OK)
-	//{
-	//	PrintError(error);
-	//	return -1;
-	//}
-
-	//printf("Frame rate: %3.2f fps\n\n", frmRate.absValue);
-
 	printf("Streaming. Press [SPACE] to start recording\n\n");
 
 	#pragma omp parallel sections num_threads(3)
@@ -306,7 +252,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (stream)
 			{
-				Image rawImage, convertedImage, dispImage;
+				Image rawImage, convertedImage;
 
 				// Retrieve an image
 				error = cam.RetrieveBuffer(&rawImage);
@@ -329,19 +275,14 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 
 				#pragma omp critical
-				dispImageStream.push(convertedImage);
-
-				if (fout.record)
 				{
-					#pragma omp critical
-					{
-						rawImageStream.push(convertedImage);
-						rawTimeStamps.push(timestamp);
-					}
+					rawImageStream.push(convertedImage);
+					rawTimeStamps.push(timestamp);
+					dispImageStream.push(convertedImage);
 				}
 				
 				if (GetAsyncKeyState(VK_SPACE))			//press [SPACE] to start recording
-					fout.record = true;
+					record = true;
 
 				if (GetAsyncKeyState(VK_ESCAPE))		//press [ESC] to exit
 					stream = false;
@@ -360,11 +301,13 @@ int _tmain(int argc, _TCHAR* argv[])
 					TimeStamp tStamp = rawTimeStamps.front();
 					Image tImage = rawImageStream.front();
 					
-					fout.WriteFrame(tStamp, tImage);
-					fout.WriteLog(tStamp);
-
-					fout.nframes++;
-
+					if (record == true)
+					{
+						fout.WriteFrame(tStamp, tImage);
+						fout.WriteLog(tStamp);
+						fout.nframes++;
+					}
+					
 					#pragma omp critical
 					{
 						rawImageStream.pop();
@@ -408,15 +351,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (error != PGRERROR_OK)
 	{
 		PrintError(error);
-		return -1;
-	}
-
-	// Power off the camera
-	const unsigned int k_powerVal_off = 0x00000000;
-	error  = cam.WriteRegister( k_cameraPower, k_powerVal_off );
-	if (error != PGRERROR_OK)
-	{
-		PrintError( error );
 		return -1;
 	}
 

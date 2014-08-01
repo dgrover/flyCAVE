@@ -6,8 +6,6 @@ using namespace FlyCapture2;
 
 FmfWriter::FmfWriter()
 {
-	record = false;
-
 	fp = new FILE;
 	flog = new FILE;
 
@@ -52,7 +50,7 @@ int FmfWriter::Close()
 	fclose(fp);
 	fclose(flog);
 
-	if (!record)
+	if (nframes == 0)
 	{
 		remove(fname);
 		remove(flogname);
