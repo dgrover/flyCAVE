@@ -11,10 +11,14 @@
 #include <stdio.h>
 #include <tchar.h>
 
+#include "FlyCapture2.h"
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
-#include <opencv2/gpu/gpu.hpp>
+
+#include "filereader.h"
+#include "flycam.h"
 
 
 // TODO: reference additional headers your program requires here

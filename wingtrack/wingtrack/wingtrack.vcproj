@@ -282,7 +282,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opencv_core249.lib opencv_highgui249.lib opencv_video249.lib opencv_gpu249.lib"
+				AdditionalDependencies="FlyCapture2.lib FlyCapture2GUI.lib opencv_core249.lib opencv_highgui249.lib opencv_video249.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -322,16 +322,12 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\fmfreader.cpp"
+				RelativePath=".\filereader.cpp"
 				>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\flycam.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\stdafx.cpp"
@@ -380,7 +376,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\fmfreader.h"
+				RelativePath=".\filereader.h"
+				>
+			</File>
+			<File
+				RelativePath=".\flycam.h"
 				>
 			</File>
 			<File
