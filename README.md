@@ -1,4 +1,4 @@
-wingtrack
+flyCAVE
 =========
 
-Tracking wing flaps in tethered Drosophila
+Virtual Reality flight simulator with wing flap tracking in tethered Drosophila
