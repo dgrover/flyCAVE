@@ -102,6 +102,11 @@ void FileReader::GetImageSize(int &imageWidth, int &imageHeight)
 		imageWidth = SizeX;
 		imageHeight = SizeY;
 	}
+	else if (fext == "txt")
+	{
+		imageWidth = 512;
+		imageHeight = 512;
+	}
 }
 
 Mat FileReader::ReadFrame(unsigned long frameIndex)
@@ -116,13 +121,18 @@ Mat FileReader::ReadFrame(unsigned long frameIndex)
 	return frame;
 }
 
-float FileReader::ReadFrame()
+Mat FileReader::ReadFrame()
 {
+	Mat pt = Mat::zeros(2, 1, cv::DataType<double>::type);
+
 	string n;
-	float p, x;
+	float x,y;
 
-	if (fscanf(fp, "%s %f\n", n, &x) == 2)
-		p = x;
+	if (fscanf(fp, "%s %f %f\n", n, &x, &y) == 3)
+	{
+		pt.at<double>(0, 0) = x;
+		pt.at<double>(1, 0) = y;
+	}
 
-	return p;
+	return pt;
 }

@@ -27,7 +27,7 @@ class FileReader
 
 		int ReadHeader();
 		
-		float ReadFrame();
+		Mat ReadFrame();
 		Mat ReadFrame(unsigned long frameIndex);
 		
 		int GetFrameCount();

@@ -9,9 +9,7 @@ using namespace cv;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	float p;
-
-	Flycam arena_cam;
+	Flycam wingcam;
 
 	BusManager busMgr;
 	unsigned int numCameras;
@@ -19,29 +17,19 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Error error;
 
-	int nframes, imageWidth, imageHeight, success;
-
 	FileReader f;
+
+	int nframes = -1;
 
 	if (argc == 2)
 	{
-		success = f.Open(argv[1]);
-		success = f.ReadHeader();
-		nframes = f.GetFrameCount();
-		f.GetImageSize(imageWidth, imageHeight);
+		f.Open(argv[1]);
+		f.ReadHeader();
+		f.GetFrameCount();
 	}
 	else
 	{
-		nframes = -1;
-
 		error = busMgr.GetNumOfCameras(&numCameras);
-
-		if (error != PGRERROR_OK)
-		{
-			error.PrintErrorTrace();
-			return -1;
-		}
-
 		printf("Number of cameras detected: %u\n", numCameras);
 
 		if (numCameras < 1)
@@ -50,35 +38,11 @@ int _tmain(int argc, _TCHAR* argv[])
 			return -1;
 		}
 
-		//Get arena camera information
+		//Initialize camera
 		error = busMgr.GetCameraFromIndex(0, &guid);
-
-		if (error != PGRERROR_OK)
-		{
-			error.PrintErrorTrace();
-			return -1;
-		}
-
-		error = arena_cam.Connect(guid);
-
-		if (error != PGRERROR_OK)
-		{
-			error.PrintErrorTrace();
-			return -1;
-		}
-
-		error = arena_cam.SetCameraParameters();
-
-		if (error != PGRERROR_OK)
-		{
-			error.PrintErrorTrace();
-			return -1;
-		}
-
-		arena_cam.GetImageSize(imageWidth, imageHeight);
-
-		// Start arena camera
-		error = arena_cam.Start();
+		error = wingcam.Connect(guid);
+		error = wingcam.SetCameraParameters(384, 256, 512, 512);
+		error = wingcam.Start();
 
 		if (error != PGRERROR_OK)
 		{
@@ -96,17 +60,12 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (argc == 2)
 			frame = f.ReadFrame(imageCount);
 		else
-		 	frame = arena_cam.GrabFrame();
+		 	frame = wingcam.GrabFrame();
 
-		if (!frame.empty())
-		{
-					mog_cpu(frame, fgmask, 0.01);
+		mog_cpu(frame, fgmask, 0.01);
 
-					imshow("raw image", frame);
-					imshow("FG mask", fgmask);
-		}
-		else
-			p = f.ReadFrame();		//Read angle from txt file
+		imshow("raw image", frame);
+		imshow("FG mask", fgmask);
 
 		waitKey(1);
 
@@ -117,11 +76,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (argc == 2)
 		f.Close();
 	else
-		arena_cam.Stop();
+		wingcam.Stop();
 
 	printf("\nPress Enter to exit...\n");
 	getchar();
 
 	return 0;
 }
-

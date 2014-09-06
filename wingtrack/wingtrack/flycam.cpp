@@ -18,7 +18,7 @@ Error Flycam::Connect(PGRGuid guid)
 	return error;
 }
 
-Error Flycam::SetCameraParameters()
+Error Flycam::SetCameraParameters(int offsetX, int offsetY, int width, int height)
 {
 	// Get the camera information
 	error = cam.GetCameraInfo(&camInfo);
@@ -32,10 +32,10 @@ Error Flycam::SetCameraParameters()
 		printf("Pixel format is not supported\n");
 
 	fmt7ImageSettings.mode = k_fmt7Mode;
-	fmt7ImageSettings.offsetX = 0;
-	fmt7ImageSettings.offsetY = 0;
-	fmt7ImageSettings.width = fmt7Info.maxWidth;
-	fmt7ImageSettings.height = fmt7Info.maxHeight;
+	fmt7ImageSettings.offsetX = offsetX;
+	fmt7ImageSettings.offsetY = offsetY;
+	fmt7ImageSettings.width = width;			// fmt7Info.maxWidth;
+	fmt7ImageSettings.height = height;			// fmt7Info.maxHeight;
 	fmt7ImageSettings.pixelFormat = k_fmt7PixFmt;
 
 	// Validate the settings to make sure that they are valid
@@ -81,7 +81,7 @@ Mat Flycam::GrabFrame()
 	error = rawImage.Convert(PIXEL_FORMAT_MONO8, &convertedImage);
 
 	// convert to OpenCV Mat
-	unsigned int rowBytes = convertedImage.GetReceivedDataSize() / convertedImage.GetRows();
+	unsigned int rowBytes = (double)convertedImage.GetReceivedDataSize() / (double)convertedImage.GetRows();
 	Mat frame = Mat(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC1, convertedImage.GetData(), rowBytes);
 
 	return frame;
