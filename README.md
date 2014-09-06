@@ -1,4 +1,4 @@
 flyCAVE
 =========
 
-Virtual Reality flight simulator with wing flap tracking in tethered Drosophila
+Fruit fly virtual reality flight simulator
