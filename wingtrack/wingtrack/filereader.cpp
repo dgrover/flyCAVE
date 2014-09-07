@@ -118,6 +118,9 @@ Mat FileReader::ReadFrame(unsigned long frameIndex)
 	fread(buf, bytesPerChunk - sizeof(double), 1, fp);
 
 	Mat frame = Mat(SizeY, SizeX, CV_8UC1, buf, (bytesPerChunk - sizeof(double)) / SizeY); //byte size of each row of frame
+	
+	//frame.convertTo(frame, CV_32FC1, 1.0 / 255.0);
+
 	return frame;
 }
 

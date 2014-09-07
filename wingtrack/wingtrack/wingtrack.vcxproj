@@ -158,7 +158,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>FlyCapture2.lib;FlyCapture2GUI.lib;opencv_core249.lib;opencv_highgui249.lib;opencv_video249.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FlyCapture2.lib;FlyCapture2GUI.lib;opencv_core249.lib;opencv_highgui249.lib;opencv_video249.lib;opencv_imgproc249.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
