@@ -15,6 +15,8 @@ class FileReader
 
 		string fext;
 
+		//Mat frame;
+
 	public:
 
 		FileReader();

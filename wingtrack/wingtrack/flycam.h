@@ -34,7 +34,7 @@ public:
 	~Flycam();
 
 	Error Connect(PGRGuid guid);
-	Error SetCameraParameters(int offsetX, int offsetY, int width, int height);
+	Error SetCameraParameters(int width, int height);
 	Error Start();
 	Error Stop();
 	Mat GrabFrame();

@@ -7,7 +7,18 @@ using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
 
-#define BGN 1000
+//#define N 1000
+
+int thresh_low = 156;
+int thresh_high = 204;
+
+Mat frame, fgmask;
+
+void thresh_callback(int, void*)
+{
+	threshold(frame, frame, thresh_low, 255, CV_THRESH_TOZERO);
+	threshold(frame, frame, thresh_high, 255, CV_THRESH_TOZERO_INV);
+};
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -45,7 +56,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		//Initialize camera
 		error = busMgr.GetCameraFromIndex(0, &guid);
 		error = wingcam.Connect(guid);
-		error = wingcam.SetCameraParameters(384, 256, 512, 512);
+		error = wingcam.SetCameraParameters(288, 200);
+		wingcam.GetImageSize(imageWidth, imageHeight);
 		error = wingcam.Start();
 		
 		if (error != PGRERROR_OK)
@@ -55,25 +67,23 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
-	Mat frame, fgmask, bframe;
+	//bg = Mat::zeros(Size(imageWidth, imageHeight), CV_32FC1);
 
-	Mat bg = Mat::zeros(Size(imageWidth, imageHeight), CV_32FC1);
+	//for (int imageCount = 0; imageCount != N; imageCount++)
+	//{
+	//	if (argc == 2)
+	//		frame = f.ReadFrame(imageCount);
+	//	else
+	//		frame = wingcam.GrabFrame();
 
+	//	accumulate(frame, bg);
+	//}
 
-	printf("\nComputing background model...\n");
-	for(int imageCount = 0; imageCount != BGN; imageCount++)
-	{
-		if (argc == 2)
-			frame = f.ReadFrame(imageCount);
-		else
-			frame = wingcam.GrabFrame();
+	//bg = bg / N;
+	//bg.convertTo(bg, CV_8UC1);
+	
 
-		accumulate(frame, bg);
-	}
-
-	bg = bg / BGN;
-	bg.convertTo(bg, CV_8UC1);
-
+	
 	vector<vector<Point>> contours;
 	vector<Vec4i> hierarchy;
 
@@ -84,8 +94,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		else
 		 	frame = wingcam.GrabFrame();
 
-		absdiff(frame, bg, fgmask);
-		threshold(fgmask, fgmask, 50, 255, CV_THRESH_BINARY);
+		createTrackbar("Threshold low", "raw image", &thresh_low, 255, thresh_callback);
+		createTrackbar("Threshold high", "raw image", &thresh_high, 255, thresh_callback);
+		thresh_callback(0, 0);
+
+		threshold(frame, fgmask, 100, 255, CV_THRESH_BINARY);
 
 		findContours(fgmask, contours, hierarchy, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 		vector<RotatedRect> minEllipse(contours.size());
@@ -93,17 +106,15 @@ int _tmain(int argc, _TCHAR* argv[])
 		for (int i = 0; i < contours.size(); i++)
 		{
 			drawContours(fgmask, contours, i, Scalar(255, 255, 255), 1, 8, vector<Vec4i>(), 0, Point());
-			if (contours[i].size() > 5)
+			if (contours[i].size() > 100)
 			{
 				minEllipse[i] = fitEllipse(Mat(contours[i]));
 				ellipse(frame, minEllipse[i], Scalar(255, 255, 255), 1, 1);
 			}
 		}
-
+		
 		imshow("raw image", frame);
-		imshow("background", bg);
-		imshow("FG mask", fgmask);
-
+		
 		waitKey(1);
 		
 		if ( GetAsyncKeyState(VK_ESCAPE) )
@@ -120,3 +131,4 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	return 0;
 }
+
