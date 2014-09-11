@@ -69,18 +69,19 @@ FlyCapture2::Error Flycam::Stop()
 	return error;
 }
 
-FlyCapture2::Image Flycam::GrabFrame()
+void Flycam::GrabFrame(Image &frame, TimeStamp &ts)
 {
 	// Retrieve an image
 	error = cam.RetrieveBuffer(&rawImage);
 
 	//get image timestamp
-	//timestamp = rawImage.GetTimeStamp();
+	timestamp = rawImage.GetTimeStamp();
 
 	// Convert the raw image
 	error = rawImage.Convert(PIXEL_FORMAT_MONO8, &convertedImage);
 
-	return convertedImage;
+	frame = convertedImage;
+	ts = timestamp;
 }
 
 Mat Flycam::convertImagetoMat(Image img)

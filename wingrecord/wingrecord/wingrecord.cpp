@@ -11,12 +11,12 @@ bool record = false;
 bool stream = true;
 
 queue <Image> rawImageStream;
+queue <TimeStamp> rawTimeStamps;
 queue <Image> dispImageStream;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	FmfWriter fout;
-
+	FmfWriter f;
 	Flycam wingcam;
 
 	BusManager busMgr;
@@ -49,9 +49,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
-	fout.Open();
-	fout.InitHeader(imageWidth, imageHeight);
-	fout.WriteHeader();
+	f.Open();
+	f.InitHeader(imageWidth, imageHeight);
+	f.WriteHeader();
 	
 	printf("Streaming. Press [SPACE] to start recording\n\n");
 
@@ -61,13 +61,15 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (true)
 			{
-
-				Image frame = wingcam.GrabFrame();
+				Image tImage; TimeStamp tStamp;
+				
+				wingcam.GrabFrame(tImage, tStamp);
 				
 				#pragma omp critical
 				{
-					rawImageStream.push(frame);
-					dispImageStream.push(frame);
+					rawImageStream.push(tImage);
+					rawTimeStamps.push(tStamp);
+					dispImageStream.push(tImage);
 				}
 				
 				if (GetAsyncKeyState(VK_SPACE))			//press [SPACE] to start recording
@@ -90,19 +92,22 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					if (record)
 					{
-						Image tImage = rawImageStream.front();
-						TimeStamp tStamp = tImage.GetTimeStamp();
+						Image wImage = rawImageStream.front();
+						TimeStamp wStamp = rawTimeStamps.front();
 						
-						fout.WriteFrame(tStamp, tImage);
-						fout.WriteLog(tStamp);
-						fout.nframes++;
+						f.WriteFrame(wStamp, wImage);
+						f.WriteLog(wStamp);
+						f.nframes++;
 					}
 					
 					#pragma omp critical
-					rawImageStream.pop();
+					{
+						rawImageStream.pop();
+						rawTimeStamps.pop();
+					}
 				}
 				
-				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), fout.nframes);
+				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), f.nframes);
 
 				if (rawImageStream.size() == 0 && !stream)
 					break;
@@ -142,7 +147,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	wingcam.Stop();
 
-	fout.Close();
+	f.Close();
 	
 	printf("\n\nDone! Press Enter to exit...\n");
 	getchar();

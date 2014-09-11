@@ -12,7 +12,7 @@ private:
 	CameraInfo camInfo;
 
 	Image rawImage, convertedImage;
-	//TimeStamp timestamp;
+	TimeStamp timestamp;
 
 	FlyCapture2::Error error;
 
@@ -37,7 +37,7 @@ public:
 	FlyCapture2::Error SetCameraParameters(int width, int height);
 	FlyCapture2::Error Start();
 	FlyCapture2::Error Stop();
-	FlyCapture2::Image GrabFrame();
+	void GrabFrame(Image &frame, TimeStamp &ts);
 	Mat convertImagetoMat(Image img);
 	void GetImageSize(int &imageWidth, int &imageHeight);
 };
