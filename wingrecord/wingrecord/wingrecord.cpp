@@ -10,8 +10,8 @@ using namespace cv;
 
 Camera cam;
 
-//bool stream = true;
 bool record = false;
+bool stream = true;
 
 queue <Image> rawImageStream;
 queue <Image> dispImageStream;
@@ -250,6 +250,13 @@ int _tmain(int argc, _TCHAR* argv[])
 				
 				if (GetAsyncKeyState(VK_SPACE))			//press [SPACE] to start recording
 					record = true;
+
+				if (GetAsyncKeyState(VK_ESCAPE))
+				{
+					stream = false;
+					break;
+				}
+
 			}
 		}
 
@@ -278,8 +285,8 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 				}
 
-				printf("%d\n", record);
-
+				if (rawImageStream.size() == 0 && !stream)
+					break;
 			}
 		}
 
@@ -309,7 +316,11 @@ int _tmain(int argc, _TCHAR* argv[])
 					dispImageStream = queue<Image>();
 				}
 
-				printf("%d\n", record);
+				if (!stream)
+				{
+					destroyWindow("raw image");
+					break;
+				}
 			}
 		}
 	}
