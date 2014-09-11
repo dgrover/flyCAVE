@@ -24,6 +24,9 @@
     <ClCompile Include="wingrecord.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="flycam.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fmfwriter.h">
@@ -33,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="flycam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,82 +2,32 @@
 //
 
 #include "stdafx.h"
-#include "fmfwriter.h"
 
 using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
-
-Camera cam;
 
 bool record = false;
 bool stream = true;
 
 queue <Image> rawImageStream;
 queue <Image> dispImageStream;
-queue <TimeStamp> rawTimeStamps;
-
-void PrintCameraInfo(CameraInfo* pCamInfo)
-{
-	printf(
-		"\n*** CAMERA INFORMATION ***\n"
-		"Serial number - %u\n"
-		"Camera model - %s\n"
-		"Camera vendor - %s\n"
-		"Sensor - %s\n"
-		"Resolution - %s\n"
-		"Firmware version - %s\n"
-		"Firmware build time - %s\n\n",
-		pCamInfo->serialNumber,
-		pCamInfo->modelName,
-		pCamInfo->vendorName,
-		pCamInfo->sensorInfo,
-		pCamInfo->sensorResolution,
-		pCamInfo->firmwareVersion,
-		pCamInfo->firmwareBuildTime);
-}
-
-void PrintFormat7Capabilities(Format7Info fmt7Info)
-{
-	printf(
-		"Max image pixels: (%u, %u)\n"
-		"Image Unit size: (%u, %u)\n"
-		"Offset Unit size: (%u, %u)\n"
-		"Pixel format bitfield: 0x%08x\n",
-		fmt7Info.maxWidth,
-		fmt7Info.maxHeight,
-		fmt7Info.imageHStepSize,
-		fmt7Info.imageVStepSize,
-		fmt7Info.offsetHStepSize,
-		fmt7Info.offsetVStepSize,
-		fmt7Info.pixelFormatBitField);
-}
-
-void PrintError(FlyCapture2::Error error)
-{
-	error.PrintErrorTrace();
-}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	FmfWriter fout;
 
-	int success;
-	FlyCapture2::Error error;
-
-	const Mode k_fmt7Mode = MODE_0;
-	const PixelFormat k_fmt7PixFmt = PIXEL_FORMAT_RAW8;
+	Flycam wingcam;
 
 	BusManager busMgr;
 	unsigned int numCameras;
-	error = busMgr.GetNumOfCameras(&numCameras);
-	
-	if (error != PGRERROR_OK)
-	{
-		PrintError(error);
-		return -1;
-	}
+	PGRGuid guid;
 
+	FlyCapture2::Error error;
+
+	int imageWidth, imageHeight;
+
+	error = busMgr.GetNumOfCameras(&numCameras);
 	printf("Number of cameras detected: %u\n", numCameras);
 
 	if (numCameras < 1)
@@ -86,131 +36,23 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
-	PGRGuid guid;
+	//Initialize camera
 	error = busMgr.GetCameraFromIndex(0, &guid);
+	error = wingcam.Connect(guid);
+	error = wingcam.SetCameraParameters(288, 200);
+	wingcam.GetImageSize(imageWidth, imageHeight);
+	error = wingcam.Start();
 
 	if (error != PGRERROR_OK)
 	{
-		PrintError(error);
+		error.PrintErrorTrace();
 		return -1;
 	}
 
-	// Connect to a camera
-	error = cam.Connect(&guid);
-	
-	if (error != PGRERROR_OK)
-	{
-		PrintError(error);
-		return -1;
-	}
-
-	// Get the camera information
-	CameraInfo camInfo;
-	error = cam.GetCameraInfo(&camInfo);
-	
-	if (error != PGRERROR_OK)
-	{
-		PrintError(error);
-		return -1;
-	}
-
-	PrintCameraInfo(&camInfo);
-
-	// Query for available Format 7 modes
-	Format7Info fmt7Info;
-	bool supported;
-	fmt7Info.mode = k_fmt7Mode;
-	error = cam.GetFormat7Info(&fmt7Info, &supported);
-	
-	if (error != PGRERROR_OK)
-	{
-		PrintError(error);
-		return -1;
-	}
-
-	PrintFormat7Capabilities(fmt7Info);
-
-	if ((k_fmt7PixFmt & fmt7Info.pixelFormatBitField) == 0)
-	{
-		// Pixel format not supported!
-		printf("Pixel format is not supported\n");
-		return -1;
-	}
-
-	Format7ImageSettings fmt7ImageSettings;
-	fmt7ImageSettings.mode = k_fmt7Mode;
-	fmt7ImageSettings.offsetX = 0;
-	fmt7ImageSettings.offsetY = 0;
-	fmt7ImageSettings.width = fmt7Info.maxWidth;
-	fmt7ImageSettings.height = fmt7Info.maxHeight;
-	fmt7ImageSettings.pixelFormat = k_fmt7PixFmt;
-
-	bool valid;
-	Format7PacketInfo fmt7PacketInfo;
-
-	// Validate the settings to make sure that they are valid
-	error = cam.ValidateFormat7Settings(
-		&fmt7ImageSettings,
-		&valid,
-		&fmt7PacketInfo);
-		
-	if (error != PGRERROR_OK)
-	{
-		PrintError(error);
-		return -1;
-	}
-
-	if (!valid)
-	{
-		// Settings are not valid
-		printf("Format7 settings are not valid\n");
-		return -1;
-	}
-
-	// Set the settings to the camera
-	error = cam.SetFormat7Configuration(
-		&fmt7ImageSettings,
-		fmt7PacketInfo.recommendedBytesPerPacket);
-	
-	if (error != PGRERROR_OK)
-	{
-		PrintError(error);
-		return -1;
-	}
-
-	////Lower shutter speed for fast triggering
-	//FlyCapture2::Property pProp;
-
-	//pProp.type = SHUTTER;
-	//pProp.absControl = true;
-	//pProp.onePush = false;
-	//pProp.onOff = true;
-	//pProp.autoManualMode = false;
-	//pProp.absValue = 0.016;
-
-	//error = cam.SetProperty( &pProp );
- //   if (error != PGRERROR_OK)
- //   {
-	//	PrintError( error );
- //       return -1;
- //   }
-
-	success = fout.Open();
-
-	if (!success)
-		return -1;
-
-	fout.InitHeader(fmt7ImageSettings.width, fmt7ImageSettings.height);
+	fout.Open();
+	fout.InitHeader(imageWidth, imageHeight);
 	fout.WriteHeader();
-
-	// Start capturing images
-	error = cam.StartCapture();
-	if (error != PGRERROR_OK)
-	{
-		PrintError(error);
-		return -1;
-	}
-
+	
 	printf("Streaming. Press [SPACE] to start recording\n\n");
 
 	#pragma omp parallel sections num_threads(3)
@@ -219,33 +61,13 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (true)
 			{
-				Image rawImage, convertedImage;
 
-				// Retrieve an image
-				error = cam.RetrieveBuffer(&rawImage);
-				if (error != PGRERROR_OK)
-				{
-					PrintError(error);
-					break;
-				}
-
-				//get image timestamp
-				TimeStamp timestamp = rawImage.GetTimeStamp();
-
-				// Convert the raw image
-				error = rawImage.Convert(PIXEL_FORMAT_MONO8, &convertedImage);
-					
-				if (error != PGRERROR_OK)
-				{
-					PrintError(error);
-					break;
-				}
-
+				Image frame = wingcam.GrabFrame();
+				
 				#pragma omp critical
 				{
-					rawImageStream.push(convertedImage);
-					rawTimeStamps.push(timestamp);
-					dispImageStream.push(convertedImage);
+					rawImageStream.push(frame);
+					dispImageStream.push(frame);
 				}
 				
 				if (GetAsyncKeyState(VK_SPACE))			//press [SPACE] to start recording
@@ -264,26 +86,23 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (true)
 			{
-				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), fout.nframes);
-
 				if (!rawImageStream.empty())
 				{
 					if (record)
 					{
-						TimeStamp tStamp = rawTimeStamps.front();
 						Image tImage = rawImageStream.front();
-
+						TimeStamp tStamp = tImage.GetTimeStamp();
+						
 						fout.WriteFrame(tStamp, tImage);
 						fout.WriteLog(tStamp);
 						fout.nframes++;
 					}
 					
 					#pragma omp critical
-					{
-						rawImageStream.pop();
-						rawTimeStamps.pop();
-					}
+					rawImageStream.pop();
 				}
+				
+				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), fout.nframes);
 
 				if (rawImageStream.size() == 0 && !stream)
 					break;
@@ -300,14 +119,10 @@ int _tmain(int argc, _TCHAR* argv[])
 					dImage.DeepCopy(&dispImageStream.back());
 					
 					// convert to OpenCV Mat
-					unsigned int rowBytes = (double)dImage.GetReceivedDataSize() / (double)dImage.GetRows();
-					Mat frame = Mat(dImage.GetRows(), dImage.GetCols(), CV_8UC1, dImage.GetData(), rowBytes);		
+					Mat frame = wingcam.convertImagetoMat(dImage);
 						
-					int width=frame.size().width;
-					int height=frame.size().height;
-
-					line(frame, Point((width/2)-50,height/2), Point((width/2)+50, height/2), 255);  //crosshair horizontal
-					line(frame, Point(width/2,(height/2)-50), Point(width/2,(height/2)+50), 255);  //crosshair vertical
+					line(frame, Point((imageWidth/2)-50, imageHeight/2), Point((imageWidth/2)+50, imageHeight/2), 255);  //crosshair horizontal
+					line(frame, Point(imageWidth/2,(imageHeight/2)-50), Point(imageWidth/2,(imageHeight/2)+50), 255);  //crosshair vertical
 
 					imshow("raw image", frame);
 					waitKey(1);
@@ -325,23 +140,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
-	// Stop capturing images
-	error = cam.StopCapture();
-	if (error != PGRERROR_OK)
-	{
-		PrintError(error);
-		return -1;
-	}
+	wingcam.Stop();
 
-	// Disconnect the camera
-	error = cam.Disconnect();
-	if (error != PGRERROR_OK)
-	{
-		PrintError(error);
-		return -1;
-	}
-
-	success = fout.Close();
+	fout.Close();
 	
 	printf("\n\nDone! Press Enter to exit...\n");
 	getchar();
