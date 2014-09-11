@@ -10,30 +10,12 @@ using namespace cv;
 
 Camera cam;
 
-bool stream = true;
+//bool stream = true;
 bool record = false;
 
 queue <Image> rawImageStream;
 queue <Image> dispImageStream;
 queue <TimeStamp> rawTimeStamps;
-
-void PrintBuildInfo()
-{
-	FC2Version fc2Version;
-	Utilities::GetLibraryVersion(&fc2Version);
-	char version[128];
-	sprintf_s(
-		version,
-		"FlyCapture2 library version: %d.%d.%d.%d\n",
-		fc2Version.major, fc2Version.minor, fc2Version.type, fc2Version.build);
-
-	printf("%s", version);
-
-	char timeStamp[512];
-	sprintf_s(timeStamp, "Application build date: %s %s\n\n", __DATE__, __TIME__);
-
-	printf("%s", timeStamp);
-}
 
 void PrintCameraInfo(CameraInfo* pCamInfo)
 {
@@ -235,7 +217,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		#pragma omp section
 		{
-			while (stream)
+			while (true)
 			{
 				Image rawImage, convertedImage;
 
@@ -268,26 +250,22 @@ int _tmain(int argc, _TCHAR* argv[])
 				
 				if (GetAsyncKeyState(VK_SPACE))			//press [SPACE] to start recording
 					record = true;
-
-				if (GetAsyncKeyState(VK_ESCAPE))		//press [ESC] to exit
-					stream = false;
-
 			}
 		}
 
 		#pragma omp section
 		{
-			while (!rawImageStream.empty())
+			while (true)
 			{
 				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), fout.nframes);
 
 				if (!rawImageStream.empty())
 				{
-					TimeStamp tStamp = rawTimeStamps.front();
-					Image tImage = rawImageStream.front();
-					
-					if (record == true)
+					if (record)
 					{
+						TimeStamp tStamp = rawTimeStamps.front();
+						Image tImage = rawImageStream.front();
+
 						fout.WriteFrame(tStamp, tImage);
 						fout.WriteLog(tStamp);
 						fout.nframes++;
@@ -299,12 +277,15 @@ int _tmain(int argc, _TCHAR* argv[])
 						rawTimeStamps.pop();
 					}
 				}
+
+				printf("%d\n", record);
+
 			}
 		}
 
 		#pragma omp section
 		{
-			while (stream)
+			while (true)
 			{
 				if (!dispImageStream.empty())
 				{
@@ -327,6 +308,8 @@ int _tmain(int argc, _TCHAR* argv[])
 					#pragma omp critical
 					dispImageStream = queue<Image>();
 				}
+
+				printf("%d\n", record);
 			}
 		}
 	}
