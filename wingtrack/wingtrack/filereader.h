@@ -1,6 +1,7 @@
 #ifndef FILEREADER_H
 #define FILEREADER_H
 
+using namespace std;
 using namespace cv;
 
 class FileReader

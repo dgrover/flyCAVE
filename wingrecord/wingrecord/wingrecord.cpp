@@ -10,6 +10,9 @@ using namespace cv;
 
 Camera cam;
 
+bool stream = true;
+bool record = false;
+
 queue <Image> rawImageStream;
 queue <Image> dispImageStream;
 queue <TimeStamp> rawTimeStamps;
@@ -68,7 +71,7 @@ void PrintFormat7Capabilities(Format7Info fmt7Info)
 		fmt7Info.pixelFormatBitField);
 }
 
-void PrintError(Error error)
+void PrintError(FlyCapture2::Error error)
 {
 	error.PrintErrorTrace();
 }
@@ -77,11 +80,8 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	FmfWriter fout;
 
-	bool stream = true;
-	bool record = false;
-
 	int success;
-	Error error;
+	FlyCapture2::Error error;
 
 	const Mode k_fmt7Mode = MODE_0;
 	const PixelFormat k_fmt7PixFmt = PIXEL_FORMAT_RAW8;
@@ -196,22 +196,22 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
-	//Lower shutter speed for fast triggering
-	FlyCapture2::Property pProp;
+	////Lower shutter speed for fast triggering
+	//FlyCapture2::Property pProp;
 
-	pProp.type = SHUTTER;
-	pProp.absControl = true;
-	pProp.onePush = false;
-	pProp.onOff = true;
-	pProp.autoManualMode = false;
-	pProp.absValue = 0.016;
+	//pProp.type = SHUTTER;
+	//pProp.absControl = true;
+	//pProp.onePush = false;
+	//pProp.onOff = true;
+	//pProp.autoManualMode = false;
+	//pProp.absValue = 0.016;
 
-	error = cam.SetProperty( &pProp );
-    if (error != PGRERROR_OK)
-    {
-		PrintError( error );
-        return -1;
-    }
+	//error = cam.SetProperty( &pProp );
+ //   if (error != PGRERROR_OK)
+ //   {
+	//	PrintError( error );
+ //       return -1;
+ //   }
 
 	success = fout.Open();
 
@@ -277,7 +277,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		#pragma omp section
 		{
-			while (stream || !rawImageStream.empty())
+			while (!rawImageStream.empty())
 			{
 				printf("Recording buffer size %d, Frames written %d\r", rawImageStream.size(), fout.nframes);
 

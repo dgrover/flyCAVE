@@ -10,7 +10,7 @@ Flycam::Flycam()
 Flycam::~Flycam()
 {}
 
-Error Flycam::Connect(PGRGuid guid)
+FlyCapture2::Error Flycam::Connect(PGRGuid guid)
 {
 	// Connect to a camera
 	error = cam.Connect(&guid);
@@ -18,7 +18,7 @@ Error Flycam::Connect(PGRGuid guid)
 	return error;
 }
 
-Error Flycam::SetCameraParameters(int width, int height)
+FlyCapture2::Error Flycam::SetCameraParameters(int width, int height)
 {
 	// Get the camera information
 	error = cam.GetCameraInfo(&camInfo);
@@ -50,7 +50,7 @@ Error Flycam::SetCameraParameters(int width, int height)
 	return error;
 }
 
-Error Flycam::Start()
+FlyCapture2::Error Flycam::Start()
 {
 	// Start capturing images
 	error = cam.StartCapture();
@@ -58,7 +58,7 @@ Error Flycam::Start()
 	return error;
 }
 
-Error Flycam::Stop()
+FlyCapture2::Error Flycam::Stop()
 {
 	// Stop capturing images
 	error = cam.StopCapture();

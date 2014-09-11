@@ -14,7 +14,7 @@ private:
 	Image rawImage, convertedImage;
 	TimeStamp timestamp;
 
-	Error error;
+	FlyCapture2::Error error;
 
 	Mode k_fmt7Mode;
 	PixelFormat k_fmt7PixFmt;
@@ -33,10 +33,10 @@ public:
 	Flycam();
 	~Flycam();
 
-	Error Connect(PGRGuid guid);
-	Error SetCameraParameters(int width, int height);
-	Error Start();
-	Error Stop();
+	FlyCapture2::Error Connect(PGRGuid guid);
+	FlyCapture2::Error SetCameraParameters(int width, int height);
+	FlyCapture2::Error Start();
+	FlyCapture2::Error Stop();
 	Mat GrabFrame();
 	void GetImageSize(int &imageWidth, int &imageHeight);
 };
