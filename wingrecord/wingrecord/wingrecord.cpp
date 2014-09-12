@@ -18,7 +18,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	FmfWriter f;
 	Flycam wingcam;
-
+	
 	BusManager busMgr;
 	unsigned int numCameras;
 	PGRGuid guid;
@@ -61,10 +61,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (true)
 			{
-				Image tImage; TimeStamp tStamp;
-				
-				wingcam.GrabFrame(tImage, tStamp);
-				
+				Image tImage = wingcam.GrabFrame();
+				TimeStamp tStamp = wingcam.GetTimeStamp();
+								
 				#pragma omp critical
 				{
 					rawImageStream.push(tImage);

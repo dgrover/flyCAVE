@@ -69,7 +69,7 @@ FlyCapture2::Error Flycam::Stop()
 	return error;
 }
 
-Mat Flycam::GrabFrame()
+FlyCapture2::Image Flycam::GrabFrame()
 {
 	// Retrieve an image
 	error = cam.RetrieveBuffer(&rawImage);
@@ -80,9 +80,14 @@ Mat Flycam::GrabFrame()
 	// Convert the raw image
 	error = rawImage.Convert(PIXEL_FORMAT_MONO8, &convertedImage);
 
+	return convertedImage;
+}
+
+Mat Flycam::convertImagetoMat(Image img)
+{
 	// convert to OpenCV Mat
-	unsigned int rowBytes = (double)convertedImage.GetReceivedDataSize() / (double)convertedImage.GetRows();
-	Mat frame = Mat(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC1, convertedImage.GetData(), rowBytes);
+	unsigned int rowBytes = (double)img.GetReceivedDataSize() / (double)img.GetRows();
+	Mat frame = Mat(img.GetRows(), img.GetCols(), CV_8UC1, img.GetData(), rowBytes);
 
 	return frame;
 }
@@ -91,4 +96,9 @@ void Flycam::GetImageSize(int &imageWidth, int &imageHeight)
 {
 		imageWidth = fmt7ImageSettings.width;
 		imageHeight = fmt7ImageSettings.height;
+}
+
+FlyCapture2::TimeStamp Flycam::GetTimeStamp()
+{
+	return timestamp;
 }

@@ -77,6 +77,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
+	FlyCapture2::Image img;
 	Mat frame, fg, bg, body_mask, fly_blob, outer_mask;
 
 	printf("\nComputing background model... ");
@@ -87,7 +88,10 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (argc == 2)
 			frame = f.ReadFrame(imageCount);
 		else
-			frame = wingcam.GrabFrame();
+		{
+			img = wingcam.GrabFrame();
+			frame = wingcam.convertImagetoMat(img);
+		}
 
 		accumulate(frame, bg);
 	}
@@ -130,7 +134,10 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (argc == 2)
 			frame = f.ReadFrame(imageCount);
 		else
-			frame = wingcam.GrabFrame();
+		{
+			img = wingcam.GrabFrame();
+			frame = wingcam.convertImagetoMat(img);
+		}
 
 		//apply body mask to frame and bg
 		frame &= body_mask;

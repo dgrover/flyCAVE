@@ -12,10 +12,10 @@ FmfWriter::FmfWriter()
 	SYSTEMTIME st;
 	GetLocalTime(&st);
 
-	sprintf_s(fname, "D:\\WingCam-%d%02d%02dT%02d%02d%02d.fmf", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+	sprintf_s(fname, "WingCam-%d%02d%02dT%02d%02d%02d.fmf", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 	remove(fname);
 
-	sprintf_s(flogname, "D:\\WingLog-%d%02d%02dT%02d%02d%02d.txt", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+	sprintf_s(flogname, "WingLog-%d%02d%02dT%02d%02d%02d.txt", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 	remove(flogname);
 }
 

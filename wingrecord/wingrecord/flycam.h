@@ -37,8 +37,9 @@ public:
 	FlyCapture2::Error SetCameraParameters(int width, int height);
 	FlyCapture2::Error Start();
 	FlyCapture2::Error Stop();
-	void GrabFrame(Image &frame, TimeStamp &ts);
+	FlyCapture2::Image GrabFrame();
 	Mat convertImagetoMat(Image img);
+	FlyCapture2::TimeStamp GetTimeStamp();
 	void GetImageSize(int &imageWidth, int &imageHeight);
 };
 
