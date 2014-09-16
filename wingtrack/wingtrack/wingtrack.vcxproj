@@ -84,8 +84,8 @@
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\SDK\opencv-3.0.0\omp-build\install\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\Point Grey Research\FlyCapture2\lib64;C:\SDK\opencv-3.0.0\omp-build\install\x64\vc12\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\SDK\opencv-3.0.0\build\install\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files\Point Grey Research\FlyCapture2\lib64;C:\SDK\opencv-3.0.0\build\install\x64\vc12\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
