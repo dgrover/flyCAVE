@@ -32,7 +32,7 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	Flycam wingcam;
+	PGRcam wingcam;
 
 	BusManager busMgr;
 	unsigned int numCameras;
@@ -163,7 +163,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			if (contours[i].size() > 50)
 			{
-				//drawContours(fg, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+				drawContours(fg, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 				
 				// Find the minimum area enclosing triangle
 				minEnclosingTriangle(contours[i], triangle);
@@ -201,7 +201,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		printf("%f %f\n", left_angle, right_angle);
 
 		imshow("raw image", frame);
-		//imshow("foreground mask", fg);
+		imshow("foreground mask", fg);
 
 		waitKey(1);
 

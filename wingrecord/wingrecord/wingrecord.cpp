@@ -17,7 +17,7 @@ queue <Image> dispImageStream;
 int _tmain(int argc, _TCHAR* argv[])
 {
 	FmfWriter f;
-	Flycam wingcam;
+	PGRcam wingcam;
 	
 	BusManager busMgr;
 	unsigned int numCameras;

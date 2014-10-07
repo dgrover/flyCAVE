@@ -24,7 +24,7 @@
     <ClCompile Include="wingrecord.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="flycam.cpp">
+    <ClCompile Include="pgrcam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,7 +38,7 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="flycam.h">
+    <ClInclude Include="pgrcam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

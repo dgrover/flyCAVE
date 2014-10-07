@@ -18,7 +18,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "filereader.h"
-#include "flycam.h"
+#include "pgrcam.h"
 
 
 // TODO: reference additional headers your program requires here

@@ -18,13 +18,13 @@
     <ClCompile Include="filereader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="flycam.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="wingtrack.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pgrcam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,13 +32,13 @@
     <ClInclude Include="filereader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="flycam.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pgrcam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
