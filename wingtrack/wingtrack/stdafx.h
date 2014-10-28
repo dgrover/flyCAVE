@@ -10,6 +10,10 @@
 #include <windows.h>
 #include <stdio.h>
 #include <tchar.h>
+#include <vector>
+
+#include <omp.h>
+#include <queue>
 
 #include "FlyCapture2.h"
 
@@ -17,7 +21,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "filereader.h"
+#include "fmfreader.h"
+#include "fmfwriter.h"
 #include "pgrcam.h"
 
 
