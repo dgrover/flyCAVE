@@ -11,10 +11,10 @@ using namespace cv;
 #define N 50
 
 bool stream = true;
+bool record = false;
 
 queue <Mat> dispStream;
-queue <Mat> bodyMaskStream;
-queue <Mat> wingMaskStream;
+queue <Mat> maskStream;
 
 queue <Image> imageStream;
 queue <TimeStamp> timeStamps;
@@ -50,6 +50,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	FlyCapture2::Error error;
 
 	//FmfReader fin;
+	FmfWriter fout;
 
 	int imageWidth = 288, imageHeight = 200;
 	
@@ -59,7 +60,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//nframes = fin.GetFrameCount();	
 
 	error = busMgr.GetNumOfCameras(&numCameras);
-	printf("Number of cameras detected: %u\n", numCameras);
+	//printf("Number of cameras detected: %u\n", numCameras);
 
 	if (numCameras < 1)
 	{
@@ -83,10 +84,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	FlyCapture2::Image img;
 	FlyCapture2::TimeStamp stamp;
 
-	Mat frame, body_mask, wing_mask;
+	Mat frame, mask;
 
-	int body_thresh = 100;
-	int wing_thresh = 200;
+	fout.Open();
+	fout.InitHeader(imageWidth, imageHeight);
+	fout.WriteHeader();
+
+	int thresh = 100;
 
 	//printf("\nComputing background model... ");
 	//bg = Mat::zeros(Size(imageWidth, imageHeight), CV_32FC1);
@@ -134,7 +138,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
 	Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
 
-	#pragma omp parallel sections num_threads(2)
+	#pragma omp parallel sections num_threads(3)
 	{
 		#pragma omp section
 		{
@@ -157,16 +161,8 @@ int _tmain(int argc, _TCHAR* argv[])
 				//erode(fg, fg, erodeElement, Point(-1, -1), 3);
 				//dilate(fg, fg, dilateElement, Point(-1, -1), 3);
 
-				threshold(frame, body_mask, body_thresh, 255, THRESH_BINARY_INV);
-				threshold(frame, wing_mask, wing_thresh, 255, THRESH_BINARY_INV);
-
-				//erode(body_mask, body_mask, erodeElement, Point(-1, -1), 1);
-				//dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 1);
-
-				//erode(wing_mask, wing_mask, erodeElement, Point(-1, -1), 1);
-				//dilate(wing_mask, wing_mask, dilateElement, Point(-1, -1), 1);
-
-
+				threshold(frame, mask, thresh, 255, THRESH_BINARY_INV);
+				
 				//// Find contours
 				//std::vector<std::vector<cv::Point> > contours;
 				//cv::findContours(fg, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
@@ -218,14 +214,16 @@ int _tmain(int argc, _TCHAR* argv[])
 				#pragma omp critical
 				{
 					dispStream.push(frame);
-					bodyMaskStream.push(body_mask);
-					wingMaskStream.push(wing_mask);
-					
+					maskStream.push(mask);
+										
 					imageStream.push(img);
 					timeStamps.push(stamp);
 				}
 
 				//printf("%f %f\n", left_angle, right_angle);
+
+				if (GetAsyncKeyState(VK_SPACE))
+					record = true;
 
 				if (GetAsyncKeyState(VK_ESCAPE))
 				{
@@ -235,57 +233,52 @@ int _tmain(int argc, _TCHAR* argv[])
 			}
 		}
 
-		//#pragma omp section
-		//{
-		//	while (true)
-		//	{
-		//		if (!imageStream.empty())
-		//		{
-		//			if (record)
-		//			{
-		//				Image wImage = imageStream.front();
-		//				TimeStamp wStamp = timeStamps.front();
+		#pragma omp section
+		{
+			while (true)
+			{
+				if (!imageStream.empty())
+				{
+					if (record)
+					{
+						Image wImage = imageStream.front();
+						TimeStamp wStamp = timeStamps.front();
 
-		//				fout.WriteFrame(wStamp, wImage);
-		//				fout.WriteLog(wStamp);
-		//				fout.nframes++;
-		//			}
+						fout.WriteFrame(wStamp, wImage);
+						fout.WriteLog(wStamp);
+						fout.nframes++;
+					}
 
-		//			#pragma omp critical
-		//			{
-		//				imageStream.pop();
-		//				timeStamps.pop();
-		//			}
-		//		}
+					#pragma omp critical
+					{
+						imageStream.pop();
+						timeStamps.pop();
+					}
+				}
 
-		//		printf("Recording buffer size %d, Frames written %d\r", imageStream.size(), fout.nframes);
+				printf("Recording buffer size %d, Frames written %d\r", imageStream.size(), fout.nframes);
 
-		//		if (imageStream.size() == 0 && !stream)
-		//			break;
-		//	}
-		//}
-
-
+				if (imageStream.size() == 0 && !stream)
+					break;
+			}
+		}
 
 		#pragma omp section
 		{
 			namedWindow("controls");
-			createTrackbar("body thresh", "controls", &body_thresh, 255);
-			createTrackbar("wing thresh", "controls", &wing_thresh, 255);
-
+			createTrackbar("thresh", "controls", &thresh, 255);
+			
 			while (true)
 			{
 				if (!dispStream.empty())
 				{
 					imshow("image", dispStream.back());
-					imshow("body mask", bodyMaskStream.back());
-					imshow("wing mask", wingMaskStream.back());
-
+					imshow("mask", maskStream.back());
+					
 					#pragma omp critical
 					{
 						dispStream = queue<Mat>();
-						bodyMaskStream = queue<Mat>();
-						wingMaskStream = queue<Mat>();
+						maskStream = queue<Mat>();
 					}
 				}
 
@@ -293,11 +286,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 				if (!stream)
 				{
-					destroyWindow("controls");
 					destroyWindow("image");
-					destroyWindow("body mask");
-					destroyWindow("wing mask");
-
+					destroyWindow("mask");
 					break;
 				}
 			}
@@ -308,7 +298,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	//fin.Close();
 	wingcam.Stop();
 
-	printf("\nPress Enter to exit...\n");
+	fout.Close();
+
+	printf("\n\nPress Enter to exit...\n");
 	getchar();
 
 	return 0;
