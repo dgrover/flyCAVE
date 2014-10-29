@@ -84,57 +84,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	FlyCapture2::Image img;
 	FlyCapture2::TimeStamp stamp;
 
-	Mat frame, mask;
+	Mat frame, mask, fly_blob, body_mask;
 
 	fout.Open();
 	fout.InitHeader(imageWidth, imageHeight);
 	fout.WriteHeader();
 
-	int thresh = 100;
-
-	//printf("\nComputing background model... ");
-	//bg = Mat::zeros(Size(imageWidth, imageHeight), CV_32FC1);
-	//
-	//for (int imageCount = 0; imageCount != N; imageCount++)
-	//{
-	//	//frame = fin.ReadFrame(imageCount);
-	//	
-	//	img = wingcam.GrabFrame();
-	//	frame = wingcam.convertImagetoMat(img);
-	//	
-	//	accumulate(frame, bg);
-	//}
-
-	//bg = bg / N;
-	//bg.convertTo(bg, CV_8UC1);
-
-	//printf("Done\n");
-
-	//int idx;
-
-	//threshold(bg, body_mask, 100, 255, THRESH_BINARY);
-	//threshold(bg, fly_blob, 100, 255, THRESH_BINARY_INV);
-
-	//std::vector<std::vector<cv::Point> > contours;
-	//cv::findContours(fly_blob, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-	///// Find the rotated rectangles and ellipses for each contour
-	//vector<RotatedRect> minEllipse(contours.size());
-
-	//for (int i = 0; i < contours.size(); i++)
-	//{
-	//	if (contours[i].size() > 50)
-	//	{
-	//		minEllipse[i] = fitEllipse(Mat(contours[i]));
-	//		ellipse(fly_blob, minEllipse[i], Scalar::all(255), 1, 8);
-
-	//		idx = i;
-	//	}
-	//}
-
-	//outer_mask = Mat::zeros(Size(imageWidth, imageHeight), CV_8UC1);
-	//circle(outer_mask, minEllipse[idx].center, imageWidth / 2, Scalar(255, 255, 255), FILLED);
-
+	int radius = 100;
+	
 	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
 	Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
 
@@ -144,28 +101,51 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (true)
 			{
+				int idx = -1;
 				//frame = fin.ReadFrame(imageCount);
 				
 				img = wingcam.GrabFrame();
 				stamp = wingcam.GetTimeStamp();
 				frame = wingcam.convertImagetoMat(img);
 				
-				//apply body mask to frame and bg
-				//frame &= body_mask;
+				threshold(frame, fly_blob, 25, 255, THRESH_BINARY_INV);
+				threshold(frame, body_mask, 100, 255, THRESH_BINARY_INV);
+				threshold(frame, mask, 150, 255, THRESH_BINARY_INV);
 
-				//absdiff(frame, body_mask, fg);
-				//threshold(fg, fg, 50, 255, THRESH_BINARY);
+				dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 2);
+				body_mask = Scalar::all(255) - body_mask;
 
-				//fg &= outer_mask;
+				vector<vector<Point>> contours;
+				findContours(fly_blob, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-				//erode(fg, fg, erodeElement, Point(-1, -1), 3);
-				//dilate(fg, fg, dilateElement, Point(-1, -1), 3);
+				/// Find the rotated rectangles and ellipses for each contour
+				vector<RotatedRect> minEllipse(contours.size());
 
-				threshold(frame, mask, thresh, 255, THRESH_BINARY_INV);
+				for (int i = 0; i < contours.size(); i++)
+				{
+					if (contours[i].size() > 50)
+					{
+						minEllipse[i] = fitEllipse(Mat(contours[i]));
+						ellipse(frame, minEllipse[i], Scalar::all(255), 1, 8);
+
+						idx = i;
+					}
+				}
+
+				//Mat outer_mask = Mat::zeros(Size(imageWidth, imageHeight), CV_8UC1);
+				//circle(outer_mask, minEllipse[idx].center, radius, Scalar(255, 255, 255), FILLED);
+
+				//threshold(frame, mask, 150, 255, THRESH_BINARY_INV);
 				
+				mask &= body_mask;
+				//mask &= outer_mask;
+
+				//erode(mask, mask, erodeElement, Point(-1, -1), 3);
+				//dilate(mask, mask, dilateElement, Point(-1, -1), 3);
+
 				//// Find contours
-				//std::vector<std::vector<cv::Point> > contours;
-				//cv::findContours(fg, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+				////std::vector<std::vector<cv::Point> > contours;
+				//cv::findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
 				//vector<Point2f> triangle;
 				//float left_angle, right_angle;
@@ -176,7 +156,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				//{
 				//	if (contours[i].size() > 50)
 				//	{
-				//		drawContours(fg, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+				//		drawContours(mask, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
 				//		// Find the minimum area enclosing triangle
 				//		minEnclosingTriangle(contours[i], triangle);
@@ -266,7 +246,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		#pragma omp section
 		{
 			namedWindow("controls");
-			createTrackbar("thresh", "controls", &thresh, 255);
+			createTrackbar("radius", "controls", &radius, imageWidth/2);
 			
 			while (true)
 			{
