@@ -7,9 +7,6 @@ using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
 
-#define PI 3.14159265358979323846
-#define N 50
-
 bool stream = true;
 bool record = false;
 
@@ -34,13 +31,15 @@ float angleBetween(Point v1, Point v2, Point c)
 	if (a >= 1.0)
 		return 0.0;
 	else if (a <= -1.0)
-		return PI;
+		return CV_PI;
 	else
-		return acos(a)*180/PI;
+		return acos(a)*180/CV_PI;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	int imageWidth = 256, imageHeight = 256;
+
 	PGRcam wingcam;
 
 	BusManager busMgr;
@@ -51,9 +50,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//FmfReader fin;
 	FmfWriter fout;
+	fout.InitHeader(imageWidth, imageHeight);
 
-	int imageWidth = 288, imageHeight = 200;
-	
 	//fin.Open(argv[1]);
 	//fin.ReadHeader();
 	//fin.GetImageSize(imageWidth, imageHeight);
@@ -86,14 +84,13 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Mat frame, mask, fly_blob, body_mask;
 
-	fout.Open();
-	fout.InitHeader(imageWidth, imageHeight);
-	fout.WriteHeader();
+	int thresh = 220;
+	int body_thresh = 150;
 
-	int radius = 100;
-	
-	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
-	Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
+	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+	Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+
+	Point2f center(imageWidth / 2, imageHeight / 2);
 
 	#pragma omp parallel sections num_threads(3)
 	{
@@ -108,88 +105,62 @@ int _tmain(int argc, _TCHAR* argv[])
 				stamp = wingcam.GetTimeStamp();
 				frame = wingcam.convertImagetoMat(img);
 				
-				threshold(frame, fly_blob, 25, 255, THRESH_BINARY_INV);
-				threshold(frame, body_mask, 100, 255, THRESH_BINARY_INV);
-				threshold(frame, mask, 150, 255, THRESH_BINARY_INV);
+				threshold(frame, body_mask, body_thresh, 255, THRESH_BINARY_INV);
+				threshold(frame, mask, thresh, 255, THRESH_BINARY_INV);
 
-				dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 2);
+				dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 1);
 				body_mask = Scalar::all(255) - body_mask;
 
-				vector<vector<Point>> contours;
-				findContours(fly_blob, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+				mask &= body_mask;
 
-				/// Find the rotated rectangles and ellipses for each contour
-				vector<RotatedRect> minEllipse(contours.size());
+				erode(mask, mask, erodeElement, Point(-1, -1), 3);
+				dilate(mask, mask, dilateElement, Point(-1, -1), 3);
+
+				// Find contours
+				std::vector<std::vector<cv::Point> > contours;
+				cv::findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+				vector<Point2f> triangle;
+				float left_angle, right_angle;
 
 				for (int i = 0; i < contours.size(); i++)
 				{
 					if (contours[i].size() > 50)
 					{
-						minEllipse[i] = fitEllipse(Mat(contours[i]));
-						ellipse(frame, minEllipse[i], Scalar::all(255), 1, 8);
+						drawContours(mask, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
-						idx = i;
+						// Find the minimum area enclosing triangle
+						minEnclosingTriangle(contours[i], triangle);
+
+						// Draw the triangle
+						if (triangle.size() > 0)
+						{
+							double min_dist = norm(center);
+							int min_idx = -1;
+
+							for (int j = 0; j < 3; j++)
+							{
+								double dist = norm(triangle[j] - center);
+								if (dist < min_dist)
+								{
+									min_dist = dist;
+									min_idx = j;
+								}
+							}
+
+							triangle.erase(triangle.begin() + min_idx);
+
+							if (triangle[0].x < center.x)
+								left_angle = angleBetween(triangle[0], triangle[1], center);
+							else
+								right_angle = angleBetween(triangle[0], triangle[1], center);
+
+							for (int j = 0; j < 2; j++)
+								line(frame, triangle[j], center, Scalar(255, 255, 255), 1, LINE_AA);
+
+						}
 					}
 				}
-
-				//Mat outer_mask = Mat::zeros(Size(imageWidth, imageHeight), CV_8UC1);
-				//circle(outer_mask, minEllipse[idx].center, radius, Scalar(255, 255, 255), FILLED);
-
-				//threshold(frame, mask, 150, 255, THRESH_BINARY_INV);
-				
-				mask &= body_mask;
-				//mask &= outer_mask;
-
-				//erode(mask, mask, erodeElement, Point(-1, -1), 3);
-				//dilate(mask, mask, dilateElement, Point(-1, -1), 3);
-
-				//// Find contours
-				////std::vector<std::vector<cv::Point> > contours;
-				//cv::findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-				//vector<Point2f> triangle;
-				//float left_angle, right_angle;
-
-				//// Find the convex hull object for each contour
-				////vector<vector<Point> >hull(contours.size());
-				//for (int i = 0; i < contours.size(); i++)
-				//{
-				//	if (contours[i].size() > 50)
-				//	{
-				//		drawContours(mask, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
-
-				//		// Find the minimum area enclosing triangle
-				//		minEnclosingTriangle(contours[i], triangle);
-
-				//		// Draw the triangle
-				//		if (triangle.size() > 0)
-				//		{
-				//			double min_dist = norm(minEllipse[idx].center);
-				//			int min_idx = -1;
-
-				//			for (int j = 0; j < 3; j++)
-				//			{
-				//				double dist = norm(triangle[j] - minEllipse[idx].center);
-				//				if (dist < min_dist)
-				//				{
-				//					min_dist = dist;
-				//					min_idx = j;
-				//				}
-				//			}
-
-				//			triangle.erase(triangle.begin() + min_idx);
-
-				//			if (triangle[0].x < minEllipse[idx].center.x)
-				//				left_angle = angleBetween(triangle[0], triangle[1], minEllipse[idx].center);
-				//			else
-				//				right_angle = angleBetween(triangle[0], triangle[1], minEllipse[idx].center);
-
-				//			for (int j = 0; j < 2; j++)
-				//				line(frame, triangle[j], minEllipse[idx].center, Scalar(255, 255, 255), 1, LINE_AA);
-
-				//		}
-				//	}
-				//}
 
 				#pragma omp critical
 				{
@@ -203,9 +174,20 @@ int _tmain(int argc, _TCHAR* argv[])
 				//printf("%f %f\n", left_angle, right_angle);
 
 				if (GetAsyncKeyState(VK_SPACE))
-					record = true;
+				{
+					if (!record)
+					{
+						fout.Open();
+						fout.WriteHeader();
+
+						record = true;
+					}
+				}
 
 				if (GetAsyncKeyState(VK_ESCAPE))
+					record = false;
+
+				if (GetAsyncKeyState(0x51))
 				{
 					stream = false;
 					break;
@@ -221,12 +203,14 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					if (record)
 					{
-						Image wImage = imageStream.front();
-						TimeStamp wStamp = timeStamps.front();
-
-						fout.WriteFrame(wStamp, wImage);
-						fout.WriteLog(wStamp);
+						fout.WriteFrame(timeStamps.front(), imageStream.front());
+						fout.WriteLog(timeStamps.front());
 						fout.nframes++;
+					}
+					else if (fout.nframes > 0)
+					{
+						fout.Close();
+						fout.InitHeader(imageWidth, imageHeight);
 					}
 
 					#pragma omp critical
@@ -236,7 +220,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 				}
 
-				printf("Recording buffer size %d, Frames written %d\r", imageStream.size(), fout.nframes);
+				printf("Recording buffer size %06d, Frames written %06d\r", imageStream.size(), fout.nframes);
 
 				if (imageStream.size() == 0 && !stream)
 					break;
@@ -245,13 +229,17 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		#pragma omp section
 		{
-			namedWindow("controls");
-			createTrackbar("radius", "controls", &radius, imageWidth/2);
+			namedWindow("controls", WINDOW_AUTOSIZE);
+			createTrackbar("thresh", "controls", &thresh, 255);
+			createTrackbar("body thresh", "controls", &body_thresh, 255);
 			
 			while (true)
 			{
 				if (!dispStream.empty())
 				{
+					line(dispStream.back(), Point((imageWidth / 2) - 50, imageHeight / 2), Point((imageWidth / 2) + 50, imageHeight / 2), 255);  //crosshair horizontal
+					line(dispStream.back(), Point(imageWidth / 2, (imageHeight / 2) - 50), Point(imageWidth / 2, (imageHeight / 2) + 50), 255);  //crosshair vertical
+
 					imshow("image", dispStream.back());
 					imshow("mask", maskStream.back());
 					
@@ -278,10 +266,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	//fin.Close();
 	wingcam.Stop();
 
-	fout.Close();
-
-	printf("\n\nPress Enter to exit...\n");
-	getchar();
+	if (record)
+		fout.Close();
 
 	return 0;
 }

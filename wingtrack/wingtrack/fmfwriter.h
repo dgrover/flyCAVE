@@ -18,8 +18,6 @@ class FmfWriter
 	public:
 		unsigned __int64 nframes;
 
-		FmfWriter();
-		
 		int Open();
 		int Close();
 

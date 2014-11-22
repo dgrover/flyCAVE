@@ -5,7 +5,7 @@ using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
 
-FmfWriter::FmfWriter()
+int FmfWriter::Open()
 {
 	fp = new FILE;
 	flog = new FILE;
@@ -13,15 +13,12 @@ FmfWriter::FmfWriter()
 	SYSTEMTIME st;
 	GetLocalTime(&st);
 
-	sprintf_s(fname, "D:\\flyception-%d%02d%02dT%02d%02d%02d.fmf", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+	sprintf_s(fname, "D:\\flycave-%d%02d%02dT%02d%02d%02d.fmf", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 	remove(fname);
 
-	sprintf_s(flogname, "D:\\flyception-log-%d%02d%02dT%02d%02d%02d.txt", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+	sprintf_s(flogname, "D:\\flycave-log-%d%02d%02dT%02d%02d%02d.txt", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 	remove(flogname);
-}
 
-int FmfWriter::Open()
-{
 	fp = fopen(fname, "wb");
 
 	if(fp == NULL) // Cannot open File
@@ -50,12 +47,6 @@ int FmfWriter::Close()
 
 	fclose(fp);
 	fclose(flog);
-
-	if (nframes == 0)
-	{
-		remove(fname);
-		remove(flogname);
-	}
 
 	return 1;
 }
