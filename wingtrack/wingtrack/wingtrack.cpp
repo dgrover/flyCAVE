@@ -8,6 +8,7 @@ using namespace FlyCapture2;
 using namespace cv;
 
 bool stream = true;
+bool track = false;
 bool record = false;
 
 queue <Mat> dispStream;
@@ -108,56 +109,59 @@ int _tmain(int argc, _TCHAR* argv[])
 				threshold(frame, body_mask, body_thresh, 255, THRESH_BINARY_INV);
 				threshold(frame, mask, thresh, 255, THRESH_BINARY_INV);
 
-				dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 1);
+				dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 3);
 				body_mask = Scalar::all(255) - body_mask;
 
 				mask &= body_mask;
 
-				erode(mask, mask, erodeElement, Point(-1, -1), 3);
-				dilate(mask, mask, dilateElement, Point(-1, -1), 3);
-
-				// Find contours
-				std::vector<std::vector<cv::Point> > contours;
-				cv::findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-				vector<Point2f> triangle;
-				float left_angle, right_angle;
-
-				for (int i = 0; i < contours.size(); i++)
+				if (track)
 				{
-					if (contours[i].size() > 50)
+					erode(mask, mask, erodeElement, Point(-1, -1), 3);
+					dilate(mask, mask, dilateElement, Point(-1, -1), 3);
+
+					// Find contours
+					std::vector<std::vector<cv::Point> > contours;
+					cv::findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+					vector<Point2f> triangle;
+					float left_angle, right_angle;
+
+					for (int i = 0; i < contours.size(); i++)
 					{
-						drawContours(mask, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
-
-						// Find the minimum area enclosing triangle
-						minEnclosingTriangle(contours[i], triangle);
-
-						// Draw the triangle
-						if (triangle.size() > 0)
+						if (contours[i].size() > 50)
 						{
-							double min_dist = norm(center);
-							int min_idx = -1;
+							//drawContours(mask, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
-							for (int j = 0; j < 3; j++)
+							// Find the minimum area enclosing triangle
+							minEnclosingTriangle(contours[i], triangle);
+
+							// Draw the triangle
+							if (triangle.size() > 0)
 							{
-								double dist = norm(triangle[j] - center);
-								if (dist < min_dist)
+								double min_dist = norm(center);
+								int min_idx = -1;
+
+								for (int j = 0; j < 3; j++)
 								{
-									min_dist = dist;
-									min_idx = j;
+									double dist = norm(triangle[j] - center);
+									if (dist < min_dist)
+									{
+										min_dist = dist;
+										min_idx = j;
+									}
 								}
+
+								triangle.erase(triangle.begin() + min_idx);
+
+								if (triangle[0].x < center.x)
+									left_angle = angleBetween(triangle[0], triangle[1], center);
+								else
+									right_angle = angleBetween(triangle[0], triangle[1], center);
+
+								for (int j = 0; j < 2; j++)
+									line(frame, triangle[j], center, Scalar(255, 255, 255), 1, LINE_AA);
+
 							}
-
-							triangle.erase(triangle.begin() + min_idx);
-
-							if (triangle[0].x < center.x)
-								left_angle = angleBetween(triangle[0], triangle[1], center);
-							else
-								right_angle = angleBetween(triangle[0], triangle[1], center);
-
-							for (int j = 0; j < 2; j++)
-								line(frame, triangle[j], center, Scalar(255, 255, 255), 1, LINE_AA);
-
 						}
 					}
 				}
@@ -183,6 +187,9 @@ int _tmain(int argc, _TCHAR* argv[])
 						record = true;
 					}
 				}
+
+				if (GetAsyncKeyState(VK_RETURN))
+					track = true;
 
 				if (GetAsyncKeyState(VK_ESCAPE))
 					record = false;
@@ -237,8 +244,8 @@ int _tmain(int argc, _TCHAR* argv[])
 			{
 				if (!dispStream.empty())
 				{
-					line(dispStream.back(), Point((imageWidth / 2) - 50, imageHeight / 2), Point((imageWidth / 2) + 50, imageHeight / 2), 255);  //crosshair horizontal
-					line(dispStream.back(), Point(imageWidth / 2, (imageHeight / 2) - 50), Point(imageWidth / 2, (imageHeight / 2) + 50), 255);  //crosshair vertical
+					line(dispStream.back(), Point((imageWidth / 2) - 25, imageHeight / 2), Point((imageWidth / 2) + 25, imageHeight / 2), 255);  //crosshair horizontal
+					line(dispStream.back(), Point(imageWidth / 2, (imageHeight / 2) - 25), Point(imageWidth / 2, (imageHeight / 2) + 25), 255);  //crosshair vertical
 
 					imshow("image", dispStream.back());
 					imshow("mask", maskStream.back());
