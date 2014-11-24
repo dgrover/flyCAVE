@@ -51,8 +51,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//FmfReader fin;
 	FmfWriter fout;
-	fout.InitHeader(imageWidth, imageHeight);
-
+	
 	//fin.Open(argv[1]);
 	//fin.ReadHeader();
 	//fin.GetImageSize(imageWidth, imageHeight);
@@ -92,6 +91,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
 
 	Point2f center(imageWidth / 2, imageHeight / 2);
+	int key_state = 0;
 
 	#pragma omp parallel sections num_threads(3)
 	{
@@ -99,7 +99,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (true)
 			{
-				int idx = -1;
 				//frame = fin.ReadFrame(imageCount);
 				
 				img = wingcam.GrabFrame();
@@ -177,24 +176,20 @@ int _tmain(int argc, _TCHAR* argv[])
 
 				//printf("%f %f\n", left_angle, right_angle);
 
-				if (GetAsyncKeyState(VK_SPACE))
+				if (GetAsyncKeyState(VK_F1))
 				{
-					if (!record)
-					{
-						fout.Open();
-						fout.WriteHeader();
+					if (!key_state)
+						record = !record;
 
-						record = true;
-					}
+					key_state = 1;
 				}
+				else
+					key_state = 0;
 
 				if (GetAsyncKeyState(VK_RETURN))
 					track = true;
 
 				if (GetAsyncKeyState(VK_ESCAPE))
-					record = false;
-
-				if (GetAsyncKeyState(0x51))
 				{
 					stream = false;
 					break;
@@ -210,14 +205,21 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					if (record)
 					{
+						if (!fout.IsOpen())
+						{
+							fout.Open();
+							fout.InitHeader(imageWidth, imageHeight);
+							fout.WriteHeader();
+						}
+						
 						fout.WriteFrame(timeStamps.front(), imageStream.front());
 						fout.WriteLog(timeStamps.front());
 						fout.nframes++;
 					}
-					else if (fout.nframes > 0)
+					else
 					{
-						fout.Close();
-						fout.InitHeader(imageWidth, imageHeight);
+						if(fout.IsOpen())
+							fout.Close();
 					}
 
 					#pragma omp critical
@@ -244,8 +246,8 @@ int _tmain(int argc, _TCHAR* argv[])
 			{
 				if (!dispStream.empty())
 				{
-					line(dispStream.back(), Point((imageWidth / 2) - 25, imageHeight / 2), Point((imageWidth / 2) + 25, imageHeight / 2), 255);  //crosshair horizontal
-					line(dispStream.back(), Point(imageWidth / 2, (imageHeight / 2) - 25), Point(imageWidth / 2, (imageHeight / 2) + 25), 255);  //crosshair vertical
+					line(dispStream.back(), Point((imageWidth / 2) - 10, imageHeight / 2), Point((imageWidth / 2) + 10, imageHeight / 2), 255);  //crosshair horizontal
+					line(dispStream.back(), Point(imageWidth / 2, (imageHeight / 2) - 10), Point(imageWidth / 2, (imageHeight / 2) + 10), 255);  //crosshair vertical
 
 					imshow("image", dispStream.back());
 					imshow("mask", maskStream.back());

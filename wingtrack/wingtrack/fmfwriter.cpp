@@ -5,6 +5,13 @@ using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
 
+FmfWriter::FmfWriter()
+{
+	fp = NULL;
+	flog = NULL;
+	nframes = 0;
+}
+
 int FmfWriter::Open()
 {
 	fp = new FILE;
@@ -48,6 +55,9 @@ int FmfWriter::Close()
 	fclose(fp);
 	fclose(flog);
 
+	fp = NULL;
+	flog = NULL;
+
 	return 1;
 }
 
@@ -82,6 +92,17 @@ void FmfWriter::WriteFrame(TimeStamp st, Image img)
 
 void FmfWriter::WriteLog(TimeStamp st)
 {
-	fprintf(flog, "Frame %d - TimeStamp [%d %d]\n", nframes, st.seconds, st.microSeconds);
+	SYSTEMTIME wt;
+	GetLocalTime(&wt);
+
+	fprintf(flog, "Frame %d - System Time [%02d:%02d:%02d] - TimeStamp [%d %d]\n", nframes, wt.wHour, wt.wMinute, wt.wSecond, st.seconds, st.microSeconds);
+}
+
+int FmfWriter::IsOpen()
+{
+	if (fp == NULL) // Cannot open File
+		return 0;
+	else
+		return 1;
 }
 

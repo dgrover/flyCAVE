@@ -18,6 +18,8 @@ class FmfWriter
 	public:
 		unsigned __int64 nframes;
 
+		FmfWriter();
+
 		int Open();
 		int Close();
 
@@ -25,6 +27,7 @@ class FmfWriter
 		void WriteHeader();
 		void WriteFrame(FlyCapture2::TimeStamp st, FlyCapture2::Image img);
 		void WriteLog(FlyCapture2::TimeStamp st);
+		int IsOpen();
 };
 
 #endif
