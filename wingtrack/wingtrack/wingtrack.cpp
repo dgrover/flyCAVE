@@ -17,6 +17,9 @@ queue <Mat> maskStream;
 queue <Image> imageStream;
 queue <TimeStamp> timeStamps;
 
+queue <float> leftwba;
+queue <float> rightwba;
+
 float angleBetween(Point v1, Point v2, Point c)
 {
 	v1 = v1 - c;
@@ -93,6 +96,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	Point2f center(imageWidth / 2, imageHeight / 2);
 	int key_state = 0;
 
+	float left_angle, right_angle;
+
 	#pragma omp parallel sections num_threads(3)
 	{
 		#pragma omp section
@@ -113,6 +118,9 @@ int _tmain(int argc, _TCHAR* argv[])
 
 				mask &= body_mask;
 
+				left_angle = 0;
+				right_angle = 0;
+
 				if (track)
 				{
 					erode(mask, mask, erodeElement, Point(-1, -1), 3);
@@ -123,8 +131,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					cv::findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
 					vector<Point2f> triangle;
-					float left_angle, right_angle;
-
+					
 					for (int i = 0; i < contours.size(); i++)
 					{
 						if (contours[i].size() > 50)
@@ -172,6 +179,9 @@ int _tmain(int argc, _TCHAR* argv[])
 										
 					imageStream.push(img);
 					timeStamps.push(stamp);
+
+					leftwba.push(left_angle);
+					rightwba.push(right_angle);
 				}
 
 				//printf("%f %f\n", left_angle, right_angle);
@@ -214,6 +224,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						
 						fout.WriteFrame(timeStamps.front(), imageStream.front());
 						fout.WriteLog(timeStamps.front());
+						fout.WriteWBA(leftwba.front(), rightwba.front());
 						fout.nframes++;
 					}
 					else
@@ -226,6 +237,8 @@ int _tmain(int argc, _TCHAR* argv[])
 					{
 						imageStream.pop();
 						timeStamps.pop();
+						leftwba.pop();
+						rightwba.pop();
 					}
 				}
 

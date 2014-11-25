@@ -9,6 +9,8 @@ FmfWriter::FmfWriter()
 {
 	fp = NULL;
 	flog = NULL;
+	fwba = NULL;
+
 	nframes = 0;
 }
 
@@ -26,6 +28,9 @@ int FmfWriter::Open()
 	sprintf_s(flogname, "D:\\flycave-log-%d%02d%02dT%02d%02d%02d.txt", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 	remove(flogname);
 
+	sprintf_s(fwbaname, "D:\\flycave-wba-%d%02d%02dT%02d%02d%02d.txt", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+	remove(fwbaname);
+
 	fp = fopen(fname, "wb");
 
 	if(fp == NULL) // Cannot open File
@@ -42,6 +47,14 @@ int FmfWriter::Open()
 		return -1;
 	}
 
+	fwba = fopen(fwbaname, "w");
+
+	if (fwba == NULL)
+	{
+		printf("\nError creating wing beat angle file. Recording terminated.");
+		return -1;
+	}
+
 	return 1;
 
 }
@@ -54,9 +67,11 @@ int FmfWriter::Close()
 
 	fclose(fp);
 	fclose(flog);
+	fclose(fwba);
 
 	fp = NULL;
 	flog = NULL;
+	fwba = NULL;
 
 	return 1;
 }
@@ -96,6 +111,11 @@ void FmfWriter::WriteLog(TimeStamp st)
 	GetLocalTime(&wt);
 
 	fprintf(flog, "Frame %d - System Time [%02d:%02d:%02d] - TimeStamp [%d %d]\n", nframes, wt.wHour, wt.wMinute, wt.wSecond, st.seconds, st.microSeconds);
+}
+
+void FmfWriter::WriteWBA(float left, float right)
+{
+	fprintf(fwba, "%d %f %f\n", nframes, left, right);
 }
 
 int FmfWriter::IsOpen()
