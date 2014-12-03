@@ -25,5 +25,8 @@
 #include "fmfwriter.h"
 #include "pgrcam.h"
 
+#include "OpenLoopSphere.h"
+
+
 
 // TODO: reference additional headers your program requires here

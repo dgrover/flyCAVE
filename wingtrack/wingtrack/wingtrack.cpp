@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 
+
 using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
@@ -42,6 +43,10 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	osg::ref_ptr<osgViewer::Viewer> viewer;
+	OpenLoopSphere ols(1, 912, 1140, 0/*1920*/, 0, 0, 0, 7.5 / 2.0, 7.5 / 2.0 + 10.5, 0.5,0 /*0.2*/, "vert_stripe.bmp", "displaySettings.txt", false);
+	viewer = ols.setup();
+
 	int imageWidth = 256, imageHeight = 256;
 
 	PGRcam wingcam;
@@ -105,7 +110,10 @@ int _tmain(int argc, _TCHAR* argv[])
 			while (true)
 			{
 				//frame = fin.ReadFrame(imageCount);
-				
+
+				viewer->getSlave(0)._viewOffset = ols.getView(1);
+				viewer->frame();
+
 				img = wingcam.GrabFrame();
 				stamp = wingcam.GetTimeStamp();
 				frame = wingcam.convertImagetoMat(img);
