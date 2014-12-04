@@ -50,9 +50,6 @@
     <ClInclude Include="pgrcam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="KeyboardHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="OpenLoopSphere.h">
       <Filter>Header Files</Filter>
     </ClInclude>
