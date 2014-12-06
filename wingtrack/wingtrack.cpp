@@ -20,6 +20,24 @@ queue <TimeStamp> timeStamps;
 queue <float> leftwba;
 queue <float> rightwba;
 
+queue <long int> fps;
+long int tc;
+
+class Timer
+{
+public:
+	Timer() : beg_(clock_::now()) {}
+	void reset() { beg_ = clock_::now(); }
+	double elapsed() const {
+		return std::chrono::duration_cast<std::chrono::milliseconds>
+			(clock_::now() - beg_).count();
+	}
+
+private:
+	typedef std::chrono::high_resolution_clock clock_;
+	std::chrono::time_point<clock_> beg_;
+};
+
 float angleBetween(Point v1, Point v2, Point c)
 {
 	v1 = v1 - c;
@@ -98,12 +116,22 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	float left_angle, right_angle;
 
+	Timer tmr;
+	int imageCount = 0;
+
 	#pragma omp parallel sections num_threads(3)
 	{
 		#pragma omp section
 		{
 			while (true)
 			{
+				if (++imageCount == 100)
+				{
+					imageCount = 0;
+					fps.push(tmr.elapsed());
+					tmr.reset();
+				}
+				
 				//frame = fin.ReadFrame(imageCount);
 				
 				img = wingcam.GrabFrame();
@@ -242,7 +270,18 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 				}
 
-				printf("Recording buffer size %06d, Frames written %06d\r", imageStream.size(), fout.nframes);
+
+				if (!fps.empty())
+				{
+					tc = 1000 / (fps.front() / 100);
+
+					#pragma omp critical
+					{
+						fps.pop();
+					}
+				}
+
+				printf("Frame rate %04d, Recording buffer size %06d, Frames written %06d\r", tc, imageStream.size(), fout.nframes);
 
 				if (imageStream.size() == 0 && !stream)
 					break;
