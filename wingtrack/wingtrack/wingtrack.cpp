@@ -44,9 +44,9 @@ float angleBetween(Point v1, Point v2, Point c)
 int _tmain(int argc, _TCHAR* argv[])
 {
 	osg::ref_ptr<osgViewer::Viewer> viewer;
-	OpenLoopSphere ols(912, 1140, 1920, 0, 2.0, 2.0 + 11.0, 0.5,0.2, "vert_stripe.bmp", "displaySettings.txt", false);
+	OpenLoopSphere ols(912, 1140, 1920, 0, 2.0, 11.0 + 2.0, argv[1], "displaySettings.txt", (int)argv[2], std::stod(argv[3], nullptr));
 	viewer = ols.setup();
-
+	
 	int imageWidth = 256, imageHeight = 256;
 
 	PGRcam wingcam;

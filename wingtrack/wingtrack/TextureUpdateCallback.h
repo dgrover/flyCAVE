@@ -8,10 +8,10 @@ class TextureUpdateCallback : public osg::NodeCallback
 {
 private:
 	osg::ref_ptr<osg::TexMat> texMat;
-	double &rotationRate, &scaleRate;
-	bool expansion;
+	double &scaleOrRotationRate;
+	int expansion;
 public:
-	TextureUpdateCallback(osg::ref_ptr<osg::TexMat> tm, double& r, double& s, bool b): texMat(tm), rotationRate(r), scaleRate(s), expansion(b){}
+	TextureUpdateCallback(osg::ref_ptr<osg::TexMat> tm, double& r, int b): texMat(tm), scaleOrRotationRate(r), expansion(b){}
 
 	virtual void operator()(osg::Node* node, osg::NodeVisitor* nv);
 };

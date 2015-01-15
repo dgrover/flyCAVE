@@ -12,10 +12,10 @@ void TextureUpdateCallback::operator()(osg::Node*, osg::NodeVisitor* nv)
 	if (nv->getFrameStamp())
 	{
 		double currTime = nv->getFrameStamp()->getSimulationTime();
-		float s = currTime*rotationRate;
-		float r = currTime*scaleRate;
+		//float s = currTime*scaleOrRotationRate;
+		float r = currTime*scaleOrRotationRate;
 
-		if (expansion)
+		if (expansion==1)
 		{
 			texMat->setMatrix(osg::Matrix::scale(1.0 / (1.0 + r), 1.0, 1.0)*osg::Matrix::translate(((1.0 - (1.0 / (1.0 + r))) - 1.0) / 2.0 + 0.5, 0.0f, 0.0f));
 			//texMat->setMatrix(osg::Matrix::scale(1.0-r,1.0,1.0)*osg::Matrix::translate((r-1.0)/2.0+0.5,0.0f,0.0f));
@@ -23,7 +23,7 @@ void TextureUpdateCallback::operator()(osg::Node*, osg::NodeVisitor* nv)
 
 		else
 		{
-			texMat->setMatrix(osg::Matrix::translate(s, 0.0f, 0.0f));
+			texMat->setMatrix(osg::Matrix::translate(r, 0.0f, 0.0f));
 		}
 	}
 }
@@ -62,7 +62,7 @@ osg::ref_ptr<osg::Geode> OpenLoopSphere::createShapes()
 	sphere->setUseDisplayList(false);
 	geode->addDrawable(sphere);
 	osg::ref_ptr<osg::TexMat> texmat = (osg::ref_ptr<osg::TexMat>)((osg::TexMat*) (stateset->getTextureAttribute(0, osg::StateAttribute::TEXMAT)));
-	geode->setUpdateCallback(new TextureUpdateCallback(texmat, rotationRate, scaleRate, expansion));
+	geode->setUpdateCallback(new TextureUpdateCallback(texmat, scaleOrRotationRate, expansion));
 	return geode;
 }
 
@@ -136,7 +136,7 @@ osg::ref_ptr<osgViewer::Viewer> OpenLoopSphere::setup()
 
 	viewer->getCamera()->setClearColor(osg::Vec4(0, 0, 0, 1)); // black background
 	viewer->getCamera()->setViewMatrixAsLookAt(osg::Vec3d(0.0, distance, 0.0), osg::Vec3d(0.0, 0, 0.0), osg::Vec3d(0, 0, 1));
-	viewer->getCamera()->setProjectionMatrixAsPerspective(40.0, 1920.0/1200.0/*((double)viewWidth) / ((double)viewHeight)*/, 0.1, 5.0);
+	viewer->getCamera()->setProjectionMatrixAsPerspective(25.0, 1920.0/1200.0/*((double)viewWidth) / ((double)viewHeight)*/, 0.1, 5.0);
 	viewer->setCameraManipulator(NULL);
 
 	return viewer;
