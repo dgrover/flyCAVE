@@ -13,10 +13,11 @@ void TextureUpdateCallback::operator()(osg::Node*, osg::NodeVisitor* nv)
 	{
 		double currTime = nv->getFrameStamp()->getSimulationTime();
 		//float s = currTime*scaleOrRotationRate;
-		float r = currTime*scaleOrRotationRate;
+		float r = currTime*scaleOrRotationRate/6.548;
 
 		if (expansion==1)
 		{
+			//texMat->setMatrix(osg::Matrix::scale(1.0 / (1.0 + r), 1.0, 1.0)*osg::Matrix::translate(((1.0 - (1.0 / (1.0 + r))) - 1.0) / 2.0 + 0.5, 0.0f, 0.0f));
 			texMat->setMatrix(osg::Matrix::scale(1.0 / (1.0 + r), 1.0, 1.0)*osg::Matrix::translate(((1.0 - (1.0 / (1.0 + r))) - 1.0) / 2.0 + 0.5, 0.0f, 0.0f));
 			//texMat->setMatrix(osg::Matrix::scale(1.0-r,1.0,1.0)*osg::Matrix::translate((r-1.0)/2.0+0.5,0.0f,0.0f));
 		}

@@ -44,7 +44,7 @@ float angleBetween(Point v1, Point v2, Point c)
 int _tmain(int argc, _TCHAR* argv[])
 {
 	osg::ref_ptr<osgViewer::Viewer> viewer;
-	OpenLoopSphere ols(912, 1140, 1920, 0, 2.0, 11.0 + 2.0, argv[1], "displaySettings.txt", (int)argv[2], std::stod(argv[3], nullptr));
+	OpenLoopSphere ols(912,1140, 1920, 2.0, 11.0 + 2.0, std::stod(argv[1], nullptr), std::stod(argv[2], nullptr), std::stod(argv[3], nullptr), std::stod(argv[4], nullptr));
 	viewer = ols.setup();
 	
 	int imageWidth = 256, imageHeight = 256;
@@ -110,6 +110,8 @@ int _tmain(int argc, _TCHAR* argv[])
 			while (true)
 			{
 				//frame = fin.ReadFrame(imageCount);
+				//cout << std::stod(argv[1], nullptr) << "\n";
+				//cout << std::stod(argv[2], nullptr) << "\n";
 
 				viewer->getSlave(0)._viewOffset = ols.getView();
 				viewer->frame();
@@ -250,7 +252,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 				}
 
-				printf("Recording buffer size %06d, Frames written %06d\r", imageStream.size(), fout.nframes);
+				//printf("Recording buffer size %06d, Frames written %06d\r", imageStream.size(), fout.nframes);
 
 				if (imageStream.size() == 0 && !stream)
 					break;
