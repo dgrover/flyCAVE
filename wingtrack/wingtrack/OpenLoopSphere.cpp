@@ -13,10 +13,11 @@ void TextureUpdateCallback::operator()(osg::Node*, osg::NodeVisitor* nv)
 	{
 		double currTime = nv->getFrameStamp()->getSimulationTime();
 		//float s = currTime*scaleOrRotationRate;
-		float r = currTime*scaleOrRotationRate/6.548;
+		float r = currTime*scaleOrRotationRate;
 
 		if (expansion==1)
 		{
+			r = currTime*scaleOrRotationRate / 6.548;
 			//texMat->setMatrix(osg::Matrix::scale(1.0 / (1.0 + r), 1.0, 1.0)*osg::Matrix::translate(((1.0 - (1.0 / (1.0 + r))) - 1.0) / 2.0 + 0.5, 0.0f, 0.0f));
 			texMat->setMatrix(osg::Matrix::scale(1.0 / (1.0 + r), 1.0, 1.0)*osg::Matrix::translate(((1.0 - (1.0 / (1.0 + r))) - 1.0) / 2.0 + 0.5, 0.0f, 0.0f));
 			//texMat->setMatrix(osg::Matrix::scale(1.0-r,1.0,1.0)*osg::Matrix::translate((r-1.0)/2.0+0.5,0.0f,0.0f));
@@ -50,11 +51,11 @@ osg::ref_ptr<osg::Geode> OpenLoopSphere::createShapes()
 	}
 
 	geode->setStateSet(stateset);
-	geode->setCullingActive(false);
+	geode->setCullingActive(true);
 	osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
 	hints->setDetailRatio(4.0f);
-	hints->setCreateBackFace(true);
-	hints->setCreateFrontFace(false);
+	hints->setCreateBackFace(false);
+	hints->setCreateFrontFace(true);
 	hints->setCreateNormals(false);
 	hints->setCreateTop(false);
 	hints->setCreateBottom(false);

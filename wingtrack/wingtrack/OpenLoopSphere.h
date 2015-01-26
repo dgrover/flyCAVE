@@ -17,7 +17,7 @@ private:
 	float cRadius;
 	double distance;
 	int expansion;
-	int clockwise;
+	double clockwise;
 	osg::Matrixd cam1StartingView;
 	osg::Matrixd cam1DefaultView;
 	osg::Matrixd cam1View;
@@ -32,7 +32,7 @@ private:
 
 public:
 
-	OpenLoopSphere(double w, double h, double x, float c, double d, int wavelength, int frequency, int clockwise, int exp) :
+	OpenLoopSphere(double w, double h, double x, float c, double d, int wavelength, double frequency, double clockwise, int exp) :
 		viewWidth(w), viewHeight(h), xOffset(x), yOffset(0), cRadius(c), distance(d), expansion(exp), scaleOrRotationRate(frequency*clockwise)
 	{
 		viewer = new osgViewer::Viewer();
@@ -41,7 +41,7 @@ public:
 		if (exp == 0)
 		{
 			displayFile="rotationDisplaySettings.txt";
-			scaleOrRotationRate = ((double)(wavelength*frequency*clockwise)) / 360.0;
+			scaleOrRotationRate = ((double)(frequency*clockwise));
 
 			switch (wavelength)
 			{
@@ -62,6 +62,7 @@ public:
 				imageFileName = "50.bmp";
 				break;	
 			}
+			//imageFileName = "numberline.gif";
 		}
 
 		else
@@ -80,7 +81,7 @@ public:
 		}
 
 
-		imageFileName = "1024.bmp";
+		//imageFileName = "1024.bmp";
 	}
 
 

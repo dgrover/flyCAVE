@@ -103,23 +103,18 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	float left_angle, right_angle;
 
-	#pragma omp parallel sections num_threads(3)
+	#pragma omp parallel sections num_threads(4)
 	{
 		#pragma omp section
 		{
 			while (true)
 			{
 				//frame = fin.ReadFrame(imageCount);
-				//cout << std::stod(argv[1], nullptr) << "\n";
-				//cout << std::stod(argv[2], nullptr) << "\n";
-
-				viewer->getSlave(0)._viewOffset = ols.getView();
-				viewer->frame();
 
 				img = wingcam.GrabFrame();
 				stamp = wingcam.GetTimeStamp();
 				frame = wingcam.convertImagetoMat(img);
-				
+
 				threshold(frame, body_mask, body_thresh, 255, THRESH_BINARY_INV);
 				threshold(frame, mask, thresh, 255, THRESH_BINARY_INV);
 
@@ -141,7 +136,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					cv::findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
 					vector<Point2f> triangle;
-					
+
 					for (int i = 0; i < contours.size(); i++)
 					{
 						if (contours[i].size() > 50)
@@ -186,7 +181,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					dispStream.push(frame);
 					maskStream.push(mask);
-										
+
 					imageStream.push(img);
 					timeStamps.push(stamp);
 
@@ -221,6 +216,29 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (true)
 			{
+				if (record)
+				{
+					//cout << std::stod(argv[1], nullptr) << "\n";
+					//cout << std::stod(argv[2], nullptr) << "\n";
+
+					viewer->getSlave(0)._viewOffset = ols.getView();
+					viewer->frame();
+				}
+
+				if (!stream)
+					break;
+
+			}
+		}
+
+		#pragma omp section
+		{
+			int ltime = 0;
+			int ctime = 0;
+			int dtime;
+
+			while (true)
+			{
 				if (!imageStream.empty())
 				{
 					if (record)
@@ -243,6 +261,20 @@ int _tmain(int argc, _TCHAR* argv[])
 							fout.Close();
 					}
 
+					ctime = timeStamps.front().cycleCount;
+
+					if (ctime < ltime)
+						dtime = ctime + (8000 - ltime);
+					else
+						dtime = ctime - ltime;
+
+					if (dtime > 0)
+						dtime = 8000 / dtime;
+					else
+						dtime = 0;
+
+					ltime = ctime;
+
 					#pragma omp critical
 					{
 						imageStream.pop();
@@ -252,7 +284,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 				}
 
-				//printf("Recording buffer size %06d, Frames written %06d\r", imageStream.size(), fout.nframes);
+				printf("Frame rate %04d, Recording buffer size %06d, Frames written %06d\r", dtime, imageStream.size(), fout.nframes);
 
 				if (imageStream.size() == 0 && !stream)
 					break;
