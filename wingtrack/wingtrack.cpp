@@ -91,7 +91,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Mat frame, mask, fly_blob, body_mask;
 
-	int thresh = 195;
+	int thresh = 190;
 	int body_thresh = 150;
 
 	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
@@ -138,12 +138,12 @@ int _tmain(int argc, _TCHAR* argv[])
 
 					for (int i = 0; i < contours.size(); i++)
 					{
-						if (contours[i].size() > 50)
+						if (contours[i].size() > 100)
 						{
 							convexHull(Mat(contours[i]), hull[i], false);
 							
 							//drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
-							//drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
 							std::sort(hull[i].begin(), hull[i].end(), myobject);
 
@@ -250,7 +250,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 
 				printf("Frame rate %04d, Recording buffer size %06d, Frames written %06d\r", dtime, imageStream.size(), fout.nframes);
-
+				
 				if (imageStream.size() == 0 && !stream)
 					break;
 			}
