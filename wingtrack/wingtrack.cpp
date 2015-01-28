@@ -7,6 +7,10 @@ using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
 
+struct myclass {
+	bool operator() (cv::Point pt1, cv::Point pt2) { return (pt1.y < pt2.y); }
+} myobject;
+
 bool stream = true;
 bool track = false;
 bool record = false;
@@ -139,7 +143,19 @@ int _tmain(int argc, _TCHAR* argv[])
 							convexHull(Mat(contours[i]), hull[i], false);
 							
 							//drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
-							drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							//drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+
+							std::sort(hull[i].begin(), hull[i].end(), myobject);
+
+							line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
+							line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
+
+							if (hull[i].front().x < center.x)
+								left_angle = angleBetween(hull[i].front(), hull[i].back(), center);
+							else
+								right_angle = angleBetween(hull[i].front(), hull[i].back(), center);
+
+
 							
 						}
 					}
