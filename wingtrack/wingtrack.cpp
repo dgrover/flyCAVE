@@ -7,9 +7,9 @@ using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
 
-struct myclass {
+struct {
 	bool operator() (cv::Point pt1, cv::Point pt2) { return (pt1.y < pt2.y); }
-} myobject;
+} mycomp;
 
 bool stream = true;
 bool track = false;
@@ -143,9 +143,9 @@ int _tmain(int argc, _TCHAR* argv[])
 							convexHull(Mat(contours[i]), hull[i], false);
 							
 							//drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
-							drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							//drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
-							std::sort(hull[i].begin(), hull[i].end(), myobject);
+							std::sort(hull[i].begin(), hull[i].end(), mycomp);
 
 							line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
 							line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
@@ -173,8 +173,6 @@ int _tmain(int argc, _TCHAR* argv[])
 					imageStream.push(img);
 				}
 
-				//printf("%f %f\n", left_angle, right_angle);
-
 				if (GetAsyncKeyState(VK_F1))
 				{
 					if (!key_state)
@@ -200,7 +198,10 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			int ltime = 0;
 			int ctime = 0;
-			int dtime;
+			int dtime = 0;
+
+			int bsize = 0;
+			int nsize = 0;
 
 			while (true)
 			{
@@ -249,9 +250,12 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 				}
 
-				printf("Frame rate %04d, Recording buffer size %06d, Frames written %06d\r", dtime, imageStream.size(), fout.nframes);
-				
-				if (imageStream.size() == 0 && !stream)
+				bsize = imageStream.size();
+				nsize = fout.nframes;
+
+				printf("Frame rate %04d, Recording buffer size %06d, Frames written %06d\r", dtime, bsize, nsize);
+
+				if (bsize == 0 && !stream)
 					break;
 			}
 		}
