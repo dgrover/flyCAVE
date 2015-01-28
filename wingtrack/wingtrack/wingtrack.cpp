@@ -92,7 +92,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Mat frame, mask, fly_blob, body_mask;
 
-	int thresh = 220;
+	int thresh = 185;
 	int body_thresh = 150;
 
 	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
@@ -105,6 +105,18 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	#pragma omp parallel sections num_threads(4)
 	{
+		#pragma omp section
+		{
+			while (true)
+			{
+				viewer->getSlave(0)._viewOffset = ols.getView();
+				viewer->frame();
+	
+				if (!stream)
+					break;
+			}
+		}
+
 		#pragma omp section
 		{
 			while (true)
@@ -179,14 +191,14 @@ int _tmain(int argc, _TCHAR* argv[])
 
 				#pragma omp critical
 				{
-					dispStream.push(frame);
 					maskStream.push(mask);
-
-					imageStream.push(img);
-					timeStamps.push(stamp);
+					dispStream.push(frame);
 
 					leftwba.push(left_angle);
 					rightwba.push(right_angle);
+
+					timeStamps.push(stamp);
+					imageStream.push(img);
 				}
 
 				//printf("%f %f\n", left_angle, right_angle);
@@ -209,25 +221,6 @@ int _tmain(int argc, _TCHAR* argv[])
 					stream = false;
 					break;
 				}
-			}
-		}
-
-		#pragma omp section
-		{
-			while (true)
-			{
-				if (record)
-				{
-					//cout << std::stod(argv[1], nullptr) << "\n";
-					//cout << std::stod(argv[2], nullptr) << "\n";
-
-					viewer->getSlave(0)._viewOffset = ols.getView();
-					viewer->frame();
-				}
-
-				if (!stream)
-					break;
-
 			}
 		}
 

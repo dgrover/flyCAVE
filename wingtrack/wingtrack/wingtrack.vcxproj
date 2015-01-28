@@ -84,8 +84,8 @@
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\SDK\opencv-3.0.0\build\install\include;C:\SDK\OpenSceneGraph-3.2.1\OpenSceneGraph\install\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\Point Grey Research\FlyCapture2\lib64;C:\SDK\opencv-3.0.0\build\install\x64\vc12\lib;C:\SDK\OpenSceneGraph-3.2.1\OpenSceneGraph\install\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\SDK\opencv-3.0.0\build\install\include;C:\SDK\OpenSceneGraph-3.2.1\OpenSceneGraph\build\install\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files\Point Grey Research\FlyCapture2\lib64;C:\SDK\opencv-3.0.0\build\install\x64\vc12\lib;C:\SDK\OpenSceneGraph-3.2.1\OpenSceneGraph\build\install\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
