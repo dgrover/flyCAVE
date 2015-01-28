@@ -15,8 +15,6 @@
 #include <omp.h>
 #include <queue>
 
-#include <chrono>
-
 #include "FlyCapture2.h"
 
 #include <opencv2/core/core.hpp>

@@ -20,24 +20,6 @@ queue <TimeStamp> timeStamps;
 queue <float> leftwba;
 queue <float> rightwba;
 
-queue <long int> fps;
-long int tc;
-
-class Timer
-{
-public:
-	Timer() : beg_(clock_::now()) {}
-	void reset() { beg_ = clock_::now(); }
-	double elapsed() const {
-		return std::chrono::duration_cast<std::chrono::milliseconds>
-			(clock_::now() - beg_).count();
-	}
-
-private:
-	typedef std::chrono::high_resolution_clock clock_;
-	std::chrono::time_point<clock_> beg_;
-};
-
 float angleBetween(Point v1, Point v2, Point c)
 {
 	v1 = v1 - c;
@@ -55,7 +37,7 @@ float angleBetween(Point v1, Point v2, Point c)
 	else if (a <= -1.0)
 		return CV_PI;
 	else
-		return acos(a)*180/CV_PI;
+		return acos(a) * 180 / CV_PI;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -72,7 +54,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//FmfReader fin;
 	FmfWriter fout;
-	
+
 	//fin.Open(argv[1]);
 	//fin.ReadHeader();
 	//fin.GetImageSize(imageWidth, imageHeight);
@@ -93,7 +75,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	error = wingcam.SetCameraParameters(imageWidth, imageHeight);
 	//wingcam.GetImageSize(imageWidth, imageHeight);
 	error = wingcam.Start();
-		
+
 	if (error != PGRERROR_OK)
 	{
 		error.PrintErrorTrace();
@@ -105,7 +87,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Mat frame, mask, fly_blob, body_mask;
 
-	int thresh = 220;
+	int thresh = 195;
 	int body_thresh = 150;
 
 	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
@@ -116,28 +98,18 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	float left_angle, right_angle;
 
-	Timer tmr;
-	int imageCount = 0;
-
 	#pragma omp parallel sections num_threads(3)
 	{
 		#pragma omp section
 		{
 			while (true)
 			{
-				if (++imageCount == 100)
-				{
-					imageCount = 0;
-					fps.push(tmr.elapsed());
-					tmr.reset();
-				}
-				
 				//frame = fin.ReadFrame(imageCount);
-				
+
 				img = wingcam.GrabFrame();
 				stamp = wingcam.GetTimeStamp();
 				frame = wingcam.convertImagetoMat(img);
-				
+
 				threshold(frame, body_mask, body_thresh, 255, THRESH_BINARY_INV);
 				threshold(frame, mask, thresh, 255, THRESH_BINARY_INV);
 
@@ -155,61 +127,34 @@ int _tmain(int argc, _TCHAR* argv[])
 					dilate(mask, mask, dilateElement, Point(-1, -1), 3);
 
 					// Find contours
-					std::vector<std::vector<cv::Point> > contours;
-					cv::findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+					vector<vector<Point>> contours;
+					findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-					vector<Point2f> triangle;
-					
+					vector<vector<Point>> hull(contours.size());
+
 					for (int i = 0; i < contours.size(); i++)
 					{
 						if (contours[i].size() > 50)
 						{
-							//drawContours(mask, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
-
-							// Find the minimum area enclosing triangle
-							minEnclosingTriangle(contours[i], triangle);
-
-							// Draw the triangle
-							if (triangle.size() > 0)
-							{
-								double min_dist = norm(center);
-								int min_idx = -1;
-
-								for (int j = 0; j < 3; j++)
-								{
-									double dist = norm(triangle[j] - center);
-									if (dist < min_dist)
-									{
-										min_dist = dist;
-										min_idx = j;
-									}
-								}
-
-								triangle.erase(triangle.begin() + min_idx);
-
-								if (triangle[0].x < center.x)
-									left_angle = angleBetween(triangle[0], triangle[1], center);
-								else
-									right_angle = angleBetween(triangle[0], triangle[1], center);
-
-								for (int j = 0; j < 2; j++)
-									line(frame, triangle[j], center, Scalar(255, 255, 255), 1, LINE_AA);
-
-							}
+							convexHull(Mat(contours[i]), hull[i], false);
+							
+							//drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							
 						}
 					}
 				}
 
 				#pragma omp critical
 				{
-					dispStream.push(frame);
 					maskStream.push(mask);
-										
-					imageStream.push(img);
-					timeStamps.push(stamp);
+					dispStream.push(frame);
 
 					leftwba.push(left_angle);
 					rightwba.push(right_angle);
+
+					timeStamps.push(stamp);
+					imageStream.push(img);
 				}
 
 				//printf("%f %f\n", left_angle, right_angle);
@@ -237,6 +182,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		#pragma omp section
 		{
+			int ltime = 0;
+			int ctime = 0;
+			int dtime;
+
 			while (true)
 			{
 				if (!imageStream.empty())
@@ -249,7 +198,7 @@ int _tmain(int argc, _TCHAR* argv[])
 							fout.InitHeader(imageWidth, imageHeight);
 							fout.WriteHeader();
 						}
-						
+
 						fout.WriteFrame(timeStamps.front(), imageStream.front());
 						fout.WriteLog(timeStamps.front());
 						fout.WriteWBA(leftwba.front(), rightwba.front());
@@ -257,9 +206,23 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 					else
 					{
-						if(fout.IsOpen())
+						if (fout.IsOpen())
 							fout.Close();
 					}
+
+					ctime = timeStamps.front().cycleCount;
+
+					if (ctime < ltime)
+						dtime = ctime + (8000 - ltime);
+					else
+						dtime = ctime - ltime;
+
+					if (dtime > 0)
+						dtime = 8000 / dtime;
+					else
+						dtime = 0;
+
+					ltime = ctime;
 
 					#pragma omp critical
 					{
@@ -270,18 +233,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 				}
 
-
-				if (!fps.empty())
-				{
-					tc = 1000 / (fps.front() / 100);
-
-					#pragma omp critical
-					{
-						fps.pop();
-					}
-				}
-
-				printf("Frame rate %04d, Recording buffer size %06d, Frames written %06d\r", tc, imageStream.size(), fout.nframes);
+				printf("Frame rate %04d, Recording buffer size %06d, Frames written %06d\r", dtime, imageStream.size(), fout.nframes);
 
 				if (imageStream.size() == 0 && !stream)
 					break;
@@ -293,7 +245,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			namedWindow("controls", WINDOW_AUTOSIZE);
 			createTrackbar("thresh", "controls", &thresh, 255);
 			createTrackbar("body thresh", "controls", &body_thresh, 255);
-			
+
 			while (true)
 			{
 				if (!dispStream.empty())
@@ -303,7 +255,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 					imshow("image", dispStream.back());
 					imshow("mask", maskStream.back());
-					
+
 					#pragma omp critical
 					{
 						dispStream = queue<Mat>();
