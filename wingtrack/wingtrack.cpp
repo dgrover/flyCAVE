@@ -69,11 +69,12 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	if (numCameras < 1)
 	{
-		printf("Insufficient number of cameras... exiting\n");
+		printf("Camera not connected... exiting\n");
 		return -1;
 	}
 
 	//Initialize camera
+	printf("Initializing camera ");
 	error = busMgr.GetCameraFromIndex(0, &guid);
 	error = wingcam.Connect(guid);
 	error = wingcam.SetCameraParameters(imageWidth, imageHeight);
@@ -86,6 +87,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 	}
 
+	printf("[OK]\n");
+
 	FlyCapture2::Image img;
 	FlyCapture2::TimeStamp stamp;
 
@@ -94,10 +97,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	int thresh = 190;
 	int body_thresh = 150;
 
-	int drawContour = 0;
-	int drawHull = 0;
-	int drawAngle = 0;
-
 	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
 	Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
 
@@ -105,11 +104,18 @@ int _tmain(int argc, _TCHAR* argv[])
 	int key_state = 0;
 
 	float left_angle, right_angle;
+	int count = 0;
+
+	printf("Press [F1] to start/stop recording. Press [ESC] to exit.\n\n");
 
 	#pragma omp parallel sections num_threads(3)
 	{
 		#pragma omp section
 		{
+			int ltime = 0;
+			int ctime = 0;
+			int dtime = 0;
+
 			while (true)
 			{
 				//frame = fin.ReadFrame(imageCount);
@@ -146,20 +152,14 @@ int _tmain(int argc, _TCHAR* argv[])
 						{
 							convexHull(Mat(contours[i]), hull[i], false);
 							
-							if (drawContour)
-								drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
-							
-							if (drawHull)
-								drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
 							std::sort(hull[i].begin(), hull[i].end(), mycomp);
 
-							if (drawAngle)
-							{
-								line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
-								line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
-							}
-
+							line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
+							line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
+							
 							if (hull[i].front().x < center.x)
 								left_angle = angleBetween(hull[i].front(), hull[i].back(), center);
 							else
@@ -171,6 +171,25 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 				}
 
+				ctime = stamp.cycleCount;
+
+				if (ctime < ltime)
+					dtime = ctime + (8000 - ltime);
+				else
+					dtime = ctime - ltime;
+
+				if (dtime > 0)
+					dtime = 8000 / dtime;
+				else
+					dtime = 0;
+
+				ltime = ctime;
+
+				putText(frame, to_string(dtime), Point(225, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+
+				if (record)
+					putText(frame, to_string(count++), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+				
 				#pragma omp critical
 				{
 					maskStream.push(mask);
@@ -186,7 +205,10 @@ int _tmain(int argc, _TCHAR* argv[])
 				if (GetAsyncKeyState(VK_F1))
 				{
 					if (!key_state)
+					{
 						record = !record;
+						count = 0;
+					}
 
 					key_state = 1;
 				}
@@ -206,13 +228,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		#pragma omp section
 		{
-			int ltime = 0;
-			int ctime = 0;
-			int dtime = 0;
-
-			int bsize = 0;
-			int nsize = 0;
-
 			while (true)
 			{
 				if (!imageStream.empty())
@@ -224,6 +239,7 @@ int _tmain(int argc, _TCHAR* argv[])
 							fout.Open();
 							fout.InitHeader(imageWidth, imageHeight);
 							fout.WriteHeader();
+							printf("Recording ");
 						}
 
 						fout.WriteFrame(timeStamps.front(), imageStream.front());
@@ -234,22 +250,11 @@ int _tmain(int argc, _TCHAR* argv[])
 					else
 					{
 						if (fout.IsOpen())
+						{
 							fout.Close();
+							printf("[OK]\n");
+						}
 					}
-
-					ctime = timeStamps.front().cycleCount;
-
-					if (ctime < ltime)
-						dtime = ctime + (8000 - ltime);
-					else
-						dtime = ctime - ltime;
-
-					if (dtime > 0)
-						dtime = 8000 / dtime;
-					else
-						dtime = 0;
-
-					ltime = ctime;
 
 					#pragma omp critical
 					{
@@ -259,13 +264,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						rightwba.pop();
 					}
 				}
-
-				bsize = imageStream.size();
-				nsize = fout.nframes;
-
-				printf("Frame rate %04d, Recording buffer size %06d, Frames written %06d\r", dtime, bsize, nsize);
-
-				if (bsize == 0 && !stream)
+				else if (!stream)
 					break;
 			}
 		}
@@ -275,10 +274,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			namedWindow("controls", WINDOW_AUTOSIZE);
 			createTrackbar("thresh", "controls", &thresh, 255);
 			createTrackbar("body thresh", "controls", &body_thresh, 255);
-			createTrackbar("draw contour", "controls", &drawContour, 1);
-			createTrackbar("draw hull", "controls", &drawHull, 1);
-			createTrackbar("draw angles", "controls", &drawAngle, 1);
-
+			
 			while (true)
 			{
 				if (!dispStream.empty())
@@ -313,7 +309,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	wingcam.Stop();
 
 	if (record)
+	{
 		fout.Close();
+		printf("[OK]\n");
+	}
 
 	return 0;
 }
