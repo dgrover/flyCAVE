@@ -198,8 +198,11 @@ int _tmain(int argc, _TCHAR* argv[])
 					leftwba.push(left_angle);
 					rightwba.push(right_angle);
 
-					timeStamps.push(stamp);
-					imageStream.push(img);
+					if (record)
+					{
+						timeStamps.push(stamp);
+						imageStream.push(img);
+					}
 				}
 
 				if (GetAsyncKeyState(VK_F1))
@@ -232,30 +235,19 @@ int _tmain(int argc, _TCHAR* argv[])
 			{
 				if (!imageStream.empty())
 				{
-					if (record)
+					if (!fout.IsOpen())
 					{
-						if (!fout.IsOpen())
-						{
-							fout.Open();
-							fout.InitHeader(imageWidth, imageHeight);
-							fout.WriteHeader();
-							printf("Recording ");
-						}
-
-						fout.WriteFrame(timeStamps.front(), imageStream.front());
-						fout.WriteLog(timeStamps.front());
-						fout.WriteWBA(leftwba.front(), rightwba.front());
-						fout.nframes++;
-					}
-					else
-					{
-						if (fout.IsOpen())
-						{
-							fout.Close();
-							printf("[OK]\n");
-						}
+						fout.Open();
+						fout.InitHeader(imageWidth, imageHeight);
+						fout.WriteHeader();
+						printf("Recording ");
 					}
 
+					fout.WriteFrame(timeStamps.front(), imageStream.front());
+					fout.WriteLog(timeStamps.front());
+					fout.WriteWBA(leftwba.front(), rightwba.front());
+					fout.nframes++;
+				
 					#pragma omp critical
 					{
 						imageStream.pop();
@@ -264,8 +256,27 @@ int _tmain(int argc, _TCHAR* argv[])
 						rightwba.pop();
 					}
 				}
-				else if (!stream)
-					break;
+				else
+				{
+					if (!record && fout.IsOpen())
+					{
+						fout.Close();
+						printf("[OK]\n");
+					}
+				}
+
+				if (!stream)
+				{
+					if (imageStream.empty())
+					{
+						if (record)
+						{
+							fout.Close();
+							printf("[OK]\n");
+						}
+						break;
+					}
+				}
 			}
 		}
 
@@ -307,12 +318,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//fin.Close();
 	wingcam.Stop();
-
-	if (record)
-	{
-		fout.Close();
-		printf("[OK]\n");
-	}
 
 	return 0;
 }
