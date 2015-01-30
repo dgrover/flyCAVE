@@ -94,6 +94,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	int thresh = 190;
 	int body_thresh = 150;
 
+	int drawContour = 0;
+	int drawHull = 0;
+	int drawAngle = 0;
+
 	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
 	Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
 
@@ -142,13 +146,19 @@ int _tmain(int argc, _TCHAR* argv[])
 						{
 							convexHull(Mat(contours[i]), hull[i], false);
 							
-							//drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
-							//drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							if (drawContour)
+								drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							
+							if (drawHull)
+								drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
 							std::sort(hull[i].begin(), hull[i].end(), mycomp);
 
-							line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
-							line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
+							if (drawAngle)
+							{
+								line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
+								line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
+							}
 
 							if (hull[i].front().x < center.x)
 								left_angle = angleBetween(hull[i].front(), hull[i].back(), center);
@@ -265,6 +275,9 @@ int _tmain(int argc, _TCHAR* argv[])
 			namedWindow("controls", WINDOW_AUTOSIZE);
 			createTrackbar("thresh", "controls", &thresh, 255);
 			createTrackbar("body thresh", "controls", &body_thresh, 255);
+			createTrackbar("draw contour", "controls", &drawContour, 1);
+			createTrackbar("draw hull", "controls", &drawHull, 1);
+			createTrackbar("draw angles", "controls", &drawAngle, 1);
 
 			while (true)
 			{
