@@ -79,6 +79,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	error = wingcam.Connect(guid);
 	error = wingcam.SetCameraParameters(imageWidth, imageHeight);
 	//wingcam.GetImageSize(imageWidth, imageHeight);
+	error = wingcam.SetProperty(SHUTTER, 4.925);
+	error = wingcam.SetProperty(GAIN, 0.0);
 	error = wingcam.Start();
 
 	if (error != PGRERROR_OK)
