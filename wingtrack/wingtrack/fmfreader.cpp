@@ -9,9 +9,9 @@ FmfReader::~FmfReader()
 
 int FmfReader::Open(_TCHAR* fname)
 {
-	fp = fopen(fname, "rb");
+	fopen_s(&fp, fname, "rb");
 
-	if(fp == NULL) // Cannot open file
+	if (fp == NULL) // Cannot open file
 	{
 		printf("Cannot open input file\n");
 		return -1;

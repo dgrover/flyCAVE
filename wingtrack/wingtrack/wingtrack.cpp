@@ -3,10 +3,13 @@
 
 #include "stdafx.h"
 
-
 using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
+
+struct {
+	bool operator() (cv::Point pt1, cv::Point pt2) { return (pt1.y < pt2.y); }
+} mycomp;
 
 bool stream = true;
 bool track = false;
@@ -38,15 +41,15 @@ float angleBetween(Point v1, Point v2, Point c)
 	else if (a <= -1.0)
 		return CV_PI;
 	else
-		return acos(a)*180/CV_PI;
+		return acos(a) * 180 / CV_PI;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	osg::ref_ptr<osgViewer::Viewer> viewer;
-	OpenLoopSphere ols(912,1140, 1920, 2.0, 11.0 + 2.0, std::stod(argv[1], nullptr), std::stod(argv[2], nullptr), std::stod(argv[3], nullptr), std::stod(argv[4], nullptr));
+	OpenLoopSphere ols(912, 1140, 1920, 2.0, 11.0 + 2.0, std::stod(argv[1], nullptr), std::stod(argv[2], nullptr), std::stod(argv[3], nullptr), std::stod(argv[4], nullptr));
 	viewer = ols.setup();
-	
+
 	int imageWidth = 256, imageHeight = 256;
 
 	PGRcam wingcam;
@@ -59,7 +62,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//FmfReader fin;
 	FmfWriter fout;
-	
+
 	//fin.Open(argv[1]);
 	//fin.ReadHeader();
 	//fin.GetImageSize(imageWidth, imageHeight);
@@ -70,29 +73,34 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	if (numCameras < 1)
 	{
-		printf("Insufficient number of cameras... exiting\n");
+		printf("Camera not connected... exiting\n");
 		return -1;
 	}
 
 	//Initialize camera
+	printf("Initializing camera ");
 	error = busMgr.GetCameraFromIndex(0, &guid);
 	error = wingcam.Connect(guid);
 	error = wingcam.SetCameraParameters(imageWidth, imageHeight);
 	//wingcam.GetImageSize(imageWidth, imageHeight);
+	error = wingcam.SetProperty(SHUTTER, 4.925);
+	error = wingcam.SetProperty(GAIN, 0.0);
 	error = wingcam.Start();
-		
+
 	if (error != PGRERROR_OK)
 	{
 		error.PrintErrorTrace();
 		return -1;
 	}
 
+	printf("[OK]\n");
+
 	FlyCapture2::Image img;
 	FlyCapture2::TimeStamp stamp;
 
 	Mat frame, mask, fly_blob, body_mask;
 
-	int thresh = 185;
+	int thresh = 190;
 	int body_thresh = 150;
 
 	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
@@ -102,6 +110,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	int key_state = 0;
 
 	float left_angle, right_angle;
+	int count = 0;
+
+	printf("Press [F1] to start/stop recording. Press [ESC] to exit.\n\n");
 
 	#pragma omp parallel sections num_threads(4)
 	{
@@ -111,7 +122,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			{
 				viewer->getSlave(0)._viewOffset = ols.getView();
 				viewer->frame();
-	
+
 				if (!stream)
 					break;
 			}
@@ -119,6 +130,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		#pragma omp section
 		{
+			int ltime = 0;
+			int ctime = 0;
+			int dtime = 0;
+
 			while (true)
 			{
 				//frame = fin.ReadFrame(imageCount);
@@ -144,50 +159,54 @@ int _tmain(int argc, _TCHAR* argv[])
 					dilate(mask, mask, dilateElement, Point(-1, -1), 3);
 
 					// Find contours
-					std::vector<std::vector<cv::Point> > contours;
-					cv::findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+					vector<vector<Point>> contours;
+					findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-					vector<Point2f> triangle;
+					vector<vector<Point>> hull(contours.size());
 
 					for (int i = 0; i < contours.size(); i++)
 					{
-						if (contours[i].size() > 50)
+						if (contours[i].size() > 100)
 						{
-							//drawContours(mask, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							convexHull(Mat(contours[i]), hull[i], false);
 
-							// Find the minimum area enclosing triangle
-							minEnclosingTriangle(contours[i], triangle);
+							drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
-							// Draw the triangle
-							if (triangle.size() > 0)
-							{
-								double min_dist = norm(center);
-								int min_idx = -1;
+							std::sort(hull[i].begin(), hull[i].end(), mycomp);
 
-								for (int j = 0; j < 3; j++)
-								{
-									double dist = norm(triangle[j] - center);
-									if (dist < min_dist)
-									{
-										min_dist = dist;
-										min_idx = j;
-									}
-								}
+							line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
+							line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
 
-								triangle.erase(triangle.begin() + min_idx);
+							if (hull[i].front().x < center.x)
+								left_angle = angleBetween(hull[i].front(), hull[i].back(), center);
+							else
+								right_angle = angleBetween(hull[i].front(), hull[i].back(), center);
 
-								if (triangle[0].x < center.x)
-									left_angle = angleBetween(triangle[0], triangle[1], center);
-								else
-									right_angle = angleBetween(triangle[0], triangle[1], center);
 
-								for (int j = 0; j < 2; j++)
-									line(frame, triangle[j], center, Scalar(255, 255, 255), 1, LINE_AA);
 
-							}
 						}
 					}
 				}
+
+				ctime = stamp.cycleCount;
+
+				if (ctime < ltime)
+					dtime = ctime + (8000 - ltime);
+				else
+					dtime = ctime - ltime;
+
+				if (dtime > 0)
+					dtime = 8000 / dtime;
+				else
+					dtime = 0;
+
+				ltime = ctime;
+
+				putText(frame, to_string(dtime), Point(225, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+
+				if (record)
+					putText(frame, to_string(count++), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
 				#pragma omp critical
 				{
@@ -197,16 +216,20 @@ int _tmain(int argc, _TCHAR* argv[])
 					leftwba.push(left_angle);
 					rightwba.push(right_angle);
 
-					timeStamps.push(stamp);
-					imageStream.push(img);
+					if (record)
+					{
+						timeStamps.push(stamp);
+						imageStream.push(img);
+					}
 				}
-
-				//printf("%f %f\n", left_angle, right_angle);
 
 				if (GetAsyncKeyState(VK_F1))
 				{
 					if (!key_state)
+					{
 						record = !record;
+						count = 0;
+					}
 
 					key_state = 1;
 				}
@@ -226,47 +249,22 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		#pragma omp section
 		{
-			int ltime = 0;
-			int ctime = 0;
-			int dtime;
-
 			while (true)
 			{
 				if (!imageStream.empty())
 				{
-					if (record)
+					if (!fout.IsOpen())
 					{
-						if (!fout.IsOpen())
-						{
-							fout.Open();
-							fout.InitHeader(imageWidth, imageHeight);
-							fout.WriteHeader();
-						}
-						
-						fout.WriteFrame(timeStamps.front(), imageStream.front());
-						fout.WriteLog(timeStamps.front());
-						fout.WriteWBA(leftwba.front(), rightwba.front());
-						fout.nframes++;
-					}
-					else
-					{
-						if(fout.IsOpen())
-							fout.Close();
+						fout.Open();
+						fout.InitHeader(imageWidth, imageHeight);
+						fout.WriteHeader();
+						printf("Recording ");
 					}
 
-					ctime = timeStamps.front().cycleCount;
-
-					if (ctime < ltime)
-						dtime = ctime + (8000 - ltime);
-					else
-						dtime = ctime - ltime;
-
-					if (dtime > 0)
-						dtime = 8000 / dtime;
-					else
-						dtime = 0;
-
-					ltime = ctime;
+					fout.WriteFrame(timeStamps.front(), imageStream.front());
+					fout.WriteLog(timeStamps.front());
+					fout.WriteWBA(leftwba.front(), rightwba.front());
+					fout.nframes++;
 
 					#pragma omp critical
 					{
@@ -276,11 +274,27 @@ int _tmain(int argc, _TCHAR* argv[])
 						rightwba.pop();
 					}
 				}
+				else
+				{
+					if (!record && fout.IsOpen())
+					{
+						fout.Close();
+						printf("[OK]\n");
+					}
+				}
 
-				printf("Frame rate %04d, Recording buffer size %06d, Frames written %06d\r", dtime, imageStream.size(), fout.nframes);
-
-				if (imageStream.size() == 0 && !stream)
-					break;
+				if (!stream)
+				{
+					if (imageStream.empty())
+					{
+						if (record)
+						{
+							fout.Close();
+							printf("[OK]\n");
+						}
+						break;
+					}
+				}
 			}
 		}
 
@@ -289,7 +303,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			namedWindow("controls", WINDOW_AUTOSIZE);
 			createTrackbar("thresh", "controls", &thresh, 255);
 			createTrackbar("body thresh", "controls", &body_thresh, 255);
-			
+
 			while (true)
 			{
 				if (!dispStream.empty())
@@ -299,7 +313,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 					imshow("image", dispStream.back());
 					imshow("mask", maskStream.back());
-					
+
 					#pragma omp critical
 					{
 						dispStream = queue<Mat>();
@@ -322,9 +336,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//fin.Close();
 	wingcam.Stop();
-
-	if (record)
-		fout.Close();
 
 	return 0;
 }
