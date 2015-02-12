@@ -7,6 +7,8 @@ using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
 
+#define MAXRECFRAMES 1000
+
 struct {
 	bool operator() (cv::Point pt1, cv::Point pt2) { return (pt1.y < pt2.y); }
 } mycomp;
@@ -197,11 +199,11 @@ int _tmain(int argc, _TCHAR* argv[])
 					maskStream.push(mask);
 					dispStream.push(frame);
 
-					leftwba.push(left_angle);
-					rightwba.push(right_angle);
-
 					if (record)
 					{
+						leftwba.push(left_angle);
+						rightwba.push(right_angle);
+
 						timeStamps.push(stamp);
 						imageStream.push(img);
 					}
@@ -227,6 +229,15 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					stream = false;
 					break;
+				}
+
+				if (record)
+				{
+					if (count == MAXRECFRAMES)
+					{
+						count = 0;
+						record = false;
+					}
 				}
 			}
 		}
