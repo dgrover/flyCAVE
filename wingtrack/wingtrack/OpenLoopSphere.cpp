@@ -138,7 +138,7 @@ osg::ref_ptr<osgViewer::Viewer> OpenLoopSphere::setup()
 
 	viewer->getCamera()->setClearColor(osg::Vec4(0, 0, 0, 1)); // black background
 	viewer->getCamera()->setViewMatrixAsLookAt(osg::Vec3d(0.0, distance, 0.0), osg::Vec3d(0.0, 0, 0.0), osg::Vec3d(0, 0, 1));
-	viewer->getCamera()->setProjectionMatrixAsPerspective(25.0, 1920.0/1200.0/*((double)viewWidth) / ((double)viewHeight)*/, 0.1, 5.0);
+	viewer->getCamera()->setProjectionMatrixAsPerspective(25.0, 1280.0/800.0, 0.1, 5.0);
 	viewer->setCameraManipulator(NULL);
 
 	return viewer;

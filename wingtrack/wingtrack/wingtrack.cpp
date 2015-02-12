@@ -7,6 +7,8 @@ using namespace std;
 using namespace FlyCapture2;
 using namespace cv;
 
+#define MAXRECFRAMES 1000
+
 struct {
 	bool operator() (cv::Point pt1, cv::Point pt2) { return (pt1.y < pt2.y); }
 } mycomp;
@@ -100,7 +102,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Mat frame, mask, fly_blob, body_mask;
 
-	int thresh = 190;
+	int thresh = 185;
 	int body_thresh = 150;
 
 	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
@@ -120,8 +122,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (true)
 			{
-				viewer->getSlave(0)._viewOffset = ols.getView();
-				viewer->frame();
+				if (record)
+				{
+					viewer->getSlave(0)._viewOffset = ols.getView();
+					viewer->frame();
+				}
 
 				if (!stream)
 					break;
@@ -213,11 +218,11 @@ int _tmain(int argc, _TCHAR* argv[])
 					maskStream.push(mask);
 					dispStream.push(frame);
 
-					leftwba.push(left_angle);
-					rightwba.push(right_angle);
-
 					if (record)
 					{
+						leftwba.push(left_angle);
+						rightwba.push(right_angle);
+
 						timeStamps.push(stamp);
 						imageStream.push(img);
 					}
@@ -243,6 +248,15 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					stream = false;
 					break;
+				}
+
+				if (record)
+				{
+					if (count == MAXRECFRAMES)
+					{
+						count = 0;
+						record = false;
+					}
 				}
 			}
 		}
