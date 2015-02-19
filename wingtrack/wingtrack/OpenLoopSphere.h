@@ -5,6 +5,7 @@
 #include <osgViewer/Viewer>
 #include <osg/ShapeDrawable>
 #include <osg/Texture2D>
+#include <osg/ImageSequence>
 #include "TextureUpdateCallback.h"
 
 class OpenLoopSphere

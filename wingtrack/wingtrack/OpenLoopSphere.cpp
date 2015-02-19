@@ -37,12 +37,30 @@ osg::ref_ptr<osg::Geode> OpenLoopSphere::createShapes()
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 	osg::ref_ptr<osg::StateSet> stateset = new osg::StateSet();
 	stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
-	osg::ref_ptr<osg::Image> image = new osg::Image();
-	image = osgDB::readImageFile(imageFileName);
+
+	//osg::ref_ptr<osg::Image> image = new osg::Image();
+	//image = osgDB::readImageFile(imageFileName);
+
+	osg::ref_ptr<osg::ImageSequence> image = new osg::ImageSequence;
+	image->setMode(osg::ImageSequence::Mode::PRE_LOAD_ALL_IMAGES);
+	//image->setMode(osg::ImageSequence::Mode::PAGE_AND_RETAIN_IMAGES);
+	image->addImageFile("red.bmp");
+	//image->addImageFile("orange.bmp");
+	//image->addImageFile("yellow.bmp");
+	//image->addImageFile("green.bmp");
+	image->addImageFile("blue.bmp");
+	//image->addImageFile("indigo.bmp");
+	//image->addImageFile("violet.bmp");
+	//image->setLength(1.0/60.0*2.0);
+	image->setLength(2.0);
+	image->setTimeMultiplier(60.0);
+	image->setLoopingMode(osg::ImageStream::LoopingMode::LOOPING);
+	image->play();
+
 
 	if (image)
 	{
-		osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D(image);
+		osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D(image.get());
 		texture->setWrap(osg::Texture::WRAP_S, osg::Texture::REPEAT);
 		osg::ref_ptr<osg::TexMat> texmat = new osg::TexMat;
 		stateset->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
@@ -64,7 +82,7 @@ osg::ref_ptr<osg::Geode> OpenLoopSphere::createShapes()
 	sphere->setUseDisplayList(false);
 	geode->addDrawable(sphere);
 	osg::ref_ptr<osg::TexMat> texmat = (osg::ref_ptr<osg::TexMat>)((osg::TexMat*) (stateset->getTextureAttribute(0, osg::StateAttribute::TEXMAT)));
-	geode->setUpdateCallback(new TextureUpdateCallback(texmat, scaleOrRotationRate, expansion));
+	//geode->setUpdateCallback(new TextureUpdateCallback(texmat, scaleOrRotationRate, expansion));
 	return geode;
 }
 

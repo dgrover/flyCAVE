@@ -122,7 +122,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (true)
 			{
-				if (record)
+				//if (record)
 				{
 					viewer->getSlave(0)._viewOffset = ols.getView();
 					viewer->frame();
