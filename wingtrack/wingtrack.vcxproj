@@ -77,8 +77,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\SDK\opencv-3.0.0\build\install\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\Point Grey Research\FlyCapture2\lib64;C:\SDK\opencv-3.0.0\build\install\x64\vc12\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\SDK\opencv-3.0.0\build\install\include;C:\SDK\OpenSceneGraph-3.2.1\OpenSceneGraph\build\install\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files\Point Grey Research\FlyCapture2\lib64;C:\SDK\opencv-3.0.0\build\install\x64\vc12\lib;C:\SDK\OpenSceneGraph-3.2.1\OpenSceneGraph\build\install\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -133,19 +133,21 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalOptions>/Zm200 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>FlyCapture2.lib;FlyCapture2GUI.lib;opencv_core300.lib;opencv_highgui300.lib;opencv_imgproc300.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FlyCapture2.lib;FlyCapture2GUI.lib;opencv_core300.lib;opencv_highgui300.lib;opencv_imgproc300.lib;osg.lib;osgDB.lib;osgGA.lib;osgViewer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="flyworld.h" />
     <ClInclude Include="fmfreader.h" />
     <ClInclude Include="fmfwriter.h" />
     <ClInclude Include="pgrcam.h" />
@@ -153,6 +155,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="flyworld.cpp" />
     <ClCompile Include="fmfreader.cpp" />
     <ClCompile Include="fmfwriter.cpp" />
     <ClCompile Include="pgrcam.cpp" />

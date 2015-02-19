@@ -24,6 +24,7 @@
 #include "fmfreader.h"
 #include "fmfwriter.h"
 #include "pgrcam.h"
+#include "flyworld.h"
 
 
 // TODO: reference additional headers your program requires here

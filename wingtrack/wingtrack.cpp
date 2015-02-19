@@ -25,6 +25,7 @@ queue <TimeStamp> timeStamps;
 
 queue <float> leftwba;
 queue <float> rightwba;
+queue <float> wbd;
 
 float angleBetween(Point v1, Point v2, Point c)
 {
@@ -48,6 +49,10 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	osg::ref_ptr<osgViewer::Viewer> viewer;
+	FlyWorld vr(912, 1140, 1920, 2.0, 11.0 + 2.0);
+	viewer = vr.setup();
+
 	int imageWidth = 256, imageHeight = 256;
 
 	PGRcam wingcam;
@@ -112,8 +117,29 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("Press [F1] to start/stop recording. Press [ESC] to exit.\n\n");
 
-	#pragma omp parallel sections num_threads(3)
+	#pragma omp parallel sections num_threads(4)
 	{
+		#pragma omp section
+		{
+			while (true)
+			{
+				if (!wbd.empty())
+				{
+					vr.angle = wbd.front();
+					viewer->getSlave(0)._viewOffset = vr.getView();
+					viewer->frame();
+
+					#pragma omp critical
+					{
+						wbd = queue<float>();
+					}
+				}
+
+				if (!stream)
+					break;
+			}
+		}
+		
 		#pragma omp section
 		{
 			int ltime = 0;
@@ -169,6 +195,12 @@ int _tmain(int argc, _TCHAR* argv[])
 							else
 								right_angle = angleBetween(hull[i].front(), hull[i].back(), center);
 
+							//if (hull[i].front().x < center.x)
+							//	left_angle = angleBetween(hull[i].front(), Point2f(imageWidth / 2, 0), center);
+							//else
+							//	right_angle = angleBetween(hull[i].front(), Point2f(imageWidth / 2, 0), center);
+
+
 
 							
 						}
@@ -198,6 +230,8 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					maskStream.push(mask);
 					dispStream.push(frame);
+
+					wbd.push(left_angle - right_angle);
 
 					if (record)
 					{
