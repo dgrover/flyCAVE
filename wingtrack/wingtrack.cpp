@@ -50,7 +50,7 @@ float angleBetween(Point v1, Point v2, Point c)
 int _tmain(int argc, _TCHAR* argv[])
 {
 	osg::ref_ptr<osgViewer::Viewer> viewer;
-	FlyWorld vr(912, 1140, 1920, 2.0, 11.0 + 2.0);
+	FlyWorld vr("blackLine.jpg", "displaySettings.txt", 912, 1140, 1920, 2.0, 11.0 + 2.0);
 	viewer = vr.setup();
 
 	int imageWidth = 256, imageHeight = 256;
