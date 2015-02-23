@@ -6,6 +6,12 @@
 #include <osg/ShapeDrawable>
 #include <osg/Texture2D>
 #include <osg/ImageSequence>
+
+	#include <osgDB/Registry>
+	#include <osgDB/FileNameUtils>
+	#include <osgDB/FileUtils>
+//#include <ctime>
+#include <chrono>
 #include "TextureUpdateCallback.h"
 
 class OpenLoopSphere
@@ -28,10 +34,14 @@ private:
 	const char* imageFileName;
 	const char* displayFile;
 
+//	osgDB::DirectoryContents getImages(std::string directory);
 	osg::ref_ptr<osg::Geode> createShapes();
 	void setStartingViews();
 
 public:
+	osg::ref_ptr<osg::ImageSequence> imageSequence;
+	unsigned int numImages;
+	double fps;
 
 	OpenLoopSphere(double w, double h, double x, float c, double d, int wavelength, double frequency, double clockwise, int exp) :
 		viewWidth(w), viewHeight(h), xOffset(x), yOffset(0), cRadius(c), distance(d), expansion(exp), scaleOrRotationRate(frequency*clockwise)

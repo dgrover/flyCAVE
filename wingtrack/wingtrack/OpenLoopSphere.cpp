@@ -15,7 +15,7 @@ void TextureUpdateCallback::operator()(osg::Node*, osg::NodeVisitor* nv)
 		//float s = currTime*scaleOrRotationRate;
 		float r = currTime*scaleOrRotationRate;
 
-		if (expansion==1)
+		if (expansion == 1)
 		{
 			r = currTime*scaleOrRotationRate / 6.548;
 			//texMat->setMatrix(osg::Matrix::scale(1.0 / (1.0 + r), 1.0, 1.0)*osg::Matrix::translate(((1.0 - (1.0 / (1.0 + r))) - 1.0) / 2.0 + 0.5, 0.0f, 0.0f));
@@ -31,9 +31,37 @@ void TextureUpdateCallback::operator()(osg::Node*, osg::NodeVisitor* nv)
 }
 
 
+static osgDB::DirectoryContents getImages(std::string directory)
+{
+	osgDB::DirectoryContents images;
+
+	if (osgDB::fileType(directory) == osgDB::DIRECTORY)
+	{
+		osgDB::DirectoryContents dc = osgDB::getSortedDirectoryContents(directory);
+
+		for (osgDB::DirectoryContents::iterator itr = dc.begin(); itr != dc.end(); ++itr)
+		{
+			std::string filename = directory + "/" + (*itr);
+			std::string ext = osgDB::getLowerCaseFileExtension(filename);
+			if ((ext == "jpg") || (ext == "png") || (ext == "gif") || (ext == "rgb") || (ext == "bmp"))
+			{
+				images.push_back(filename);
+			}
+		}
+	}
+
+	else
+	{
+		images.push_back(directory);
+	}
+
+	return images;
+}
+
 
 osg::ref_ptr<osg::Geode> OpenLoopSphere::createShapes()
 {
+	 fps = 60.0;
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 	osg::ref_ptr<osg::StateSet> stateset = new osg::StateSet();
 	stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
@@ -41,26 +69,46 @@ osg::ref_ptr<osg::Geode> OpenLoopSphere::createShapes()
 	//osg::ref_ptr<osg::Image> image = new osg::Image();
 	//image = osgDB::readImageFile(imageFileName);
 
-	osg::ref_ptr<osg::ImageSequence> image = new osg::ImageSequence;
-	image->setMode(osg::ImageSequence::Mode::PRE_LOAD_ALL_IMAGES);
-	//image->setMode(osg::ImageSequence::Mode::PAGE_AND_RETAIN_IMAGES);
-	image->addImageFile("red.bmp");
-	//image->addImageFile("orange.bmp");
-	//image->addImageFile("yellow.bmp");
-	//image->addImageFile("green.bmp");
-	image->addImageFile("blue.bmp");
-	//image->addImageFile("indigo.bmp");
-	//image->addImageFile("violet.bmp");
-	//image->setLength(1.0/60.0*2.0);
-	image->setLength(2.0);
-	image->setTimeMultiplier(60.0);
-	image->setLoopingMode(osg::ImageStream::LoopingMode::LOOPING);
-	image->play();
+	osgDB::DirectoryContents images = getImages("images");
+	imageSequence = new osg::ImageSequence;
+	imageSequence->setMode(osg::ImageSequence::Mode::PRE_LOAD_ALL_IMAGES);
 
-
-	if (image)
+	if (!images.empty())
 	{
-		osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D(image.get());
+		for (osgDB::DirectoryContents::iterator itr = images.begin(); itr != images.end(); ++itr)
+		{
+			const std::string& filename = *itr;
+			osg::ref_ptr<osg::Image> image = osgDB::readImageFile(filename);
+
+			if (image.valid())
+			{
+				imageSequence->addImage(image.get());
+			}
+		}
+
+		 numImages = imageSequence->getNumImageData();
+		//imageSequence->setLength(double(numImages)*(1.0 / fps));
+	}
+	//imageSequence->setMode(osg::ImageSequence::Mode::LOAD_AND_RETAIN_IN_UPDATE_TRAVERSAL);
+	//imageSequence->setMode(osg::ImageSequence::Mode::LOAD_AND_DISCARD_IN_UPDATE_TRAVERSAL);
+//	imageSequence->setMode(osg::ImageSequence::Mode::PAGE_AND_RETAIN_IMAGES);
+	//imageSequence->addImageFile("red.bmp");
+	//imageSequence->addImageFile("orange.bmp");
+	//imageSequence->addImageFile("yellow.bmp");
+	//imageSequence->addImageFile("green.bmp");
+	//imageSequence->addImageFile("blue.bmp");
+	//imageSequence->addImageFile("indigo.bmp");
+	//imageSequence->addImageFile("violet.bmp");
+	//imageSequence->setLength(1.0/60.0*2.0);
+	//imageSequence->setLength(2.0);
+	//imageSequence->setTimeMultiplier(60.0);
+	imageSequence->setLoopingMode(osg::ImageStream::LoopingMode::NO_LOOPING);
+	//imageSequence->play();
+
+
+	if (imageSequence)
+	{
+		osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D(imageSequence.get());
 		texture->setWrap(osg::Texture::WRAP_S, osg::Texture::REPEAT);
 		osg::ref_ptr<osg::TexMat> texmat = new osg::TexMat;
 		stateset->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
@@ -156,7 +204,7 @@ osg::ref_ptr<osgViewer::Viewer> OpenLoopSphere::setup()
 
 	viewer->getCamera()->setClearColor(osg::Vec4(0, 0, 0, 1)); // black background
 	viewer->getCamera()->setViewMatrixAsLookAt(osg::Vec3d(0.0, distance, 0.0), osg::Vec3d(0.0, 0, 0.0), osg::Vec3d(0, 0, 1));
-	viewer->getCamera()->setProjectionMatrixAsPerspective(25.0, 1280.0/800.0, 0.1, 5.0);
+	viewer->getCamera()->setProjectionMatrixAsPerspective(25.0, 1280.0 / 800.0, 0.1, 5.0);
 	viewer->setCameraManipulator(NULL);
 
 	return viewer;

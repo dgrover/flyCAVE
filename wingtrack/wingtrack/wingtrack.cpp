@@ -13,6 +13,21 @@ struct {
 	bool operator() (cv::Point pt1, cv::Point pt2) { return (pt1.y < pt2.y); }
 } mycomp;
 
+class Timer
+{
+public:
+	Timer() : beg_(clock_::now()) {}
+	void reset() { beg_ = clock_::now(); }
+	double elapsed() const {
+		return std::chrono::duration_cast<std::chrono::microseconds>
+			(clock_::now() - beg_).count();
+	}
+
+private:
+	typedef std::chrono::high_resolution_clock clock_;
+	std::chrono::time_point<clock_> beg_;
+};
+
 bool stream = true;
 bool track = false;
 bool record = false;
@@ -46,10 +61,11 @@ float angleBetween(Point v1, Point v2, Point c)
 		return acos(a) * 180 / CV_PI;
 }
 
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	osg::ref_ptr<osgViewer::Viewer> viewer;
-	OpenLoopSphere ols(912, 1140, 1920, 2.0, 11.0 + 2.0, std::stod(argv[1], nullptr), std::stod(argv[2], nullptr), std::stod(argv[3], nullptr), std::stod(argv[4], nullptr));
+	OpenLoopSphere ols(1280, 800, 1920, 2.0, 11.0 + 2.0, 30, 0, 0, 0);//std::stod(argv[1], nullptr), std::stod(argv[2], nullptr), std::stod(argv[3], nullptr), std::stod(argv[4], nullptr));
 	viewer = ols.setup();
 
 	int imageWidth = 256, imageHeight = 256;
@@ -114,239 +130,260 @@ int _tmain(int argc, _TCHAR* argv[])
 	float left_angle, right_angle;
 	int count = 0;
 
+	Timer tmr;
+
 	printf("Press [F1] to start/stop recording. Press [ESC] to exit.\n\n");
 
-	#pragma omp parallel sections num_threads(4)
-	{
-		#pragma omp section
-		{
+	//#pragma omp parallel sections num_threads(4)
+	//{
+	//	#pragma omp section
+	//	{
+	viewer->getSlave(0)._viewOffset = ols.getView();
+
+	//time_t start;
+	//time_t now;
+	//time(&start);
+	int index = 0;
+	unsigned int n = ols.numImages;
+	double r = ols.fps;//
+	r = 60.0;
+	tmr.reset();
 			while (true)
 			{
 				//if (record)
-				{
-					viewer->getSlave(0)._viewOffset = ols.getView();
+				//{
+					ols.imageSequence->seek(index/60 % 2);
+	
+				//	printf("%i", (((int)(tmr.elapsed()*r)) % n));
+					//printf("%i\n", ((int)((tmr.elapsed()/1000)*r)) % n);
+					//ols.imageSequence->seek(((int)((tmr.elapsed() / 1000000.0)*r)) % n);
+					//printf("%i\n", ((int)((tmr.elapsed() / 1000000.0)*r)) % n);
+					//printf("%f, ", tmr.elapsed()/1000000.0*r);
+					//printf("%i\n", ((int)((tmr.elapsed() / 1000000.0)*r)) % n);
+					
 					viewer->frame();
-				}
+					index++;
+			//	}
 
-				if (!stream)
-					break;
+			//	if (!stream)
+					//break;
 			}
-		}
+	//	}
 
-		#pragma omp section
-		{
-			int ltime = 0;
-			int ctime = 0;
-			int dtime = 0;
+	//	#pragma omp section
+	//	{
+	//		int ltime = 0;
+	//		int ctime = 0;
+	//		int dtime = 0;
 
-			while (true)
-			{
-				//frame = fin.ReadFrame(imageCount);
+	//		while (true)
+	//		{
+	//			//frame = fin.ReadFrame(imageCount);
 
-				img = wingcam.GrabFrame();
-				stamp = wingcam.GetTimeStamp();
-				frame = wingcam.convertImagetoMat(img);
+	//			img = wingcam.GrabFrame();
+	//			stamp = wingcam.GetTimeStamp();
+	//			frame = wingcam.convertImagetoMat(img);
 
-				threshold(frame, body_mask, body_thresh, 255, THRESH_BINARY_INV);
-				threshold(frame, mask, thresh, 255, THRESH_BINARY_INV);
+	//			threshold(frame, body_mask, body_thresh, 255, THRESH_BINARY_INV);
+	//			threshold(frame, mask, thresh, 255, THRESH_BINARY_INV);
 
-				dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 3);
-				body_mask = Scalar::all(255) - body_mask;
+	//			dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 3);
+	//			body_mask = Scalar::all(255) - body_mask;
 
-				mask &= body_mask;
+	//			mask &= body_mask;
 
-				left_angle = 0;
-				right_angle = 0;
+	//			left_angle = 0;
+	//			right_angle = 0;
 
-				if (track)
-				{
-					erode(mask, mask, erodeElement, Point(-1, -1), 3);
-					dilate(mask, mask, dilateElement, Point(-1, -1), 3);
+	//			if (track)
+	//			{
+	//				erode(mask, mask, erodeElement, Point(-1, -1), 3);
+	//				dilate(mask, mask, dilateElement, Point(-1, -1), 3);
 
-					// Find contours
-					vector<vector<Point>> contours;
-					findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+	//				// Find contours
+	//				vector<vector<Point>> contours;
+	//				findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-					vector<vector<Point>> hull(contours.size());
+	//				vector<vector<Point>> hull(contours.size());
 
-					for (int i = 0; i < contours.size(); i++)
-					{
-						if (contours[i].size() > 100)
-						{
-							convexHull(Mat(contours[i]), hull[i], false);
+	//				for (int i = 0; i < contours.size(); i++)
+	//				{
+	//					if (contours[i].size() > 100)
+	//					{
+	//						convexHull(Mat(contours[i]), hull[i], false);
 
-							drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
-							drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+	//						drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+	//						drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
-							std::sort(hull[i].begin(), hull[i].end(), mycomp);
+	//						std::sort(hull[i].begin(), hull[i].end(), mycomp);
 
-							line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
-							line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
+	//						line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
+	//						line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
 
-							if (hull[i].front().x < center.x)
-								left_angle = angleBetween(hull[i].front(), hull[i].back(), center);
-							else
-								right_angle = angleBetween(hull[i].front(), hull[i].back(), center);
+	//						if (hull[i].front().x < center.x)
+	//							left_angle = angleBetween(hull[i].front(), hull[i].back(), center);
+	//						else
+	//							right_angle = angleBetween(hull[i].front(), hull[i].back(), center);
 
 
 
-						}
-					}
-				}
+	//					}
+	//				}
+	//			}
 
-				ctime = stamp.cycleCount;
+	//			ctime = stamp.cycleCount;
 
-				if (ctime < ltime)
-					dtime = ctime + (8000 - ltime);
-				else
-					dtime = ctime - ltime;
+	//			if (ctime < ltime)
+	//				dtime = ctime + (8000 - ltime);
+	//			else
+	//				dtime = ctime - ltime;
 
-				if (dtime > 0)
-					dtime = 8000 / dtime;
-				else
-					dtime = 0;
+	//			if (dtime > 0)
+	//				dtime = 8000 / dtime;
+	//			else
+	//				dtime = 0;
 
-				ltime = ctime;
+	//			ltime = ctime;
 
-				putText(frame, to_string(dtime), Point(225, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+	//			putText(frame, to_string(dtime), Point(225, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
-				if (record)
-					putText(frame, to_string(count++), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+	//			if (record)
+	//				putText(frame, to_string(count++), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
-				#pragma omp critical
-				{
-					maskStream.push(mask);
-					dispStream.push(frame);
+	//			#pragma omp critical
+	//			{
+	//				maskStream.push(mask);
+	//				dispStream.push(frame);
 
-					if (record)
-					{
-						leftwba.push(left_angle);
-						rightwba.push(right_angle);
+	//				if (record)
+	//				{
+	//					leftwba.push(left_angle);
+	//					rightwba.push(right_angle);
 
-						timeStamps.push(stamp);
-						imageStream.push(img);
-					}
-				}
+	//					timeStamps.push(stamp);
+	//					imageStream.push(img);
+	//				}
+	//			}
 
-				if (GetAsyncKeyState(VK_F1))
-				{
-					if (!key_state)
-					{
-						record = !record;
-						count = 0;
-					}
+	//			if (GetAsyncKeyState(VK_F1))
+	//			{
+	//				if (!key_state)
+	//				{
+	//					record = !record;
+	//					count = 0;
+	//				}
 
-					key_state = 1;
-				}
-				else
-					key_state = 0;
+	//				key_state = 1;
+	//			}
+	//			else
+	//				key_state = 0;
 
-				if (GetAsyncKeyState(VK_RETURN))
-					track = true;
+	//			if (GetAsyncKeyState(VK_RETURN))
+	//				track = true;
 
-				if (GetAsyncKeyState(VK_ESCAPE))
-				{
-					stream = false;
-					break;
-				}
+	//			if (GetAsyncKeyState(VK_ESCAPE))
+	//			{
+	//				stream = false;
+	//				break;
+	//			}
 
-				if (record)
-				{
-					if (count == MAXRECFRAMES)
-					{
-						count = 0;
-						record = false;
-					}
-				}
-			}
-		}
+	//			if (record)
+	//			{
+	//				if (count == MAXRECFRAMES)
+	//				{
+	//					count = 0;
+	//					record = false;
+	//				}
+	//			}
+	//		}
+	//	}
 
-		#pragma omp section
-		{
-			while (true)
-			{
-				if (!imageStream.empty())
-				{
-					if (!fout.IsOpen())
-					{
-						fout.Open();
-						fout.InitHeader(imageWidth, imageHeight);
-						fout.WriteHeader();
-						printf("Recording ");
-					}
+	//	#pragma omp section
+	//	{
+	//		while (true)
+	//		{
+	//			if (!imageStream.empty())
+	//			{
+	//				if (!fout.IsOpen())
+	//				{
+	//					fout.Open();
+	//					fout.InitHeader(imageWidth, imageHeight);
+	//					fout.WriteHeader();
+	//					printf("Recording ");
+	//				}
 
-					fout.WriteFrame(timeStamps.front(), imageStream.front());
-					fout.WriteLog(timeStamps.front());
-					fout.WriteWBA(leftwba.front(), rightwba.front());
-					fout.nframes++;
+	//				fout.WriteFrame(timeStamps.front(), imageStream.front());
+	//				fout.WriteLog(timeStamps.front());
+	//				fout.WriteWBA(leftwba.front(), rightwba.front());
+	//				fout.nframes++;
 
-					#pragma omp critical
-					{
-						imageStream.pop();
-						timeStamps.pop();
-						leftwba.pop();
-						rightwba.pop();
-					}
-				}
-				else
-				{
-					if (!record && fout.IsOpen())
-					{
-						fout.Close();
-						printf("[OK]\n");
-					}
-				}
+	//				#pragma omp critical
+	//				{
+	//					imageStream.pop();
+	//					timeStamps.pop();
+	//					leftwba.pop();
+	//					rightwba.pop();
+	//				}
+	//			}
+	//			else
+	//			{
+	//				if (!record && fout.IsOpen())
+	//				{
+	//					fout.Close();
+	//					printf("[OK]\n");
+	//				}
+	//			}
 
-				if (!stream)
-				{
-					if (imageStream.empty())
-					{
-						if (record)
-						{
-							fout.Close();
-							printf("[OK]\n");
-						}
-						break;
-					}
-				}
-			}
-		}
+	//			if (!stream)
+	//			{
+	//				if (imageStream.empty())
+	//				{
+	//					if (record)
+	//					{
+	//						fout.Close();
+	//						printf("[OK]\n");
+	//					}
+	//					break;
+	//				}
+	//			}
+	//		}
+	//	}
 
-		#pragma omp section
-		{
-			namedWindow("controls", WINDOW_AUTOSIZE);
-			createTrackbar("thresh", "controls", &thresh, 255);
-			createTrackbar("body thresh", "controls", &body_thresh, 255);
+	//	#pragma omp section
+	//	{
+	//		namedWindow("controls", WINDOW_AUTOSIZE);
+	//		createTrackbar("thresh", "controls", &thresh, 255);
+	//		createTrackbar("body thresh", "controls", &body_thresh, 255);
 
-			while (true)
-			{
-				if (!dispStream.empty())
-				{
-					line(dispStream.back(), Point((imageWidth / 2) - 10, imageHeight / 2), Point((imageWidth / 2) + 10, imageHeight / 2), 255);  //crosshair horizontal
-					line(dispStream.back(), Point(imageWidth / 2, (imageHeight / 2) - 10), Point(imageWidth / 2, (imageHeight / 2) + 10), 255);  //crosshair vertical
+	//		while (true)
+	//		{
+	//			if (!dispStream.empty())
+	//			{
+	//				line(dispStream.back(), Point((imageWidth / 2) - 10, imageHeight / 2), Point((imageWidth / 2) + 10, imageHeight / 2), 255);  //crosshair horizontal
+	//				line(dispStream.back(), Point(imageWidth / 2, (imageHeight / 2) - 10), Point(imageWidth / 2, (imageHeight / 2) + 10), 255);  //crosshair vertical
 
-					imshow("image", dispStream.back());
-					imshow("mask", maskStream.back());
+	//				imshow("image", dispStream.back());
+	//				imshow("mask", maskStream.back());
 
-					#pragma omp critical
-					{
-						dispStream = queue<Mat>();
-						maskStream = queue<Mat>();
-					}
-				}
+	//				#pragma omp critical
+	//				{
+	//					dispStream = queue<Mat>();
+	//					maskStream = queue<Mat>();
+	//				}
+	//			}
 
-				waitKey(1);
+	//			waitKey(1);
 
-				if (!stream)
-				{
-					destroyWindow("image");
-					destroyWindow("mask");
-					break;
-				}
-			}
-		}
+	//			if (!stream)
+	//			{
+	//				destroyWindow("image");
+	//				destroyWindow("mask");
+	//				break;
+	//			}
+	//		}
+	//	}
 
-	}
+	//}
 
 	//fin.Close();
 	wingcam.Stop();
