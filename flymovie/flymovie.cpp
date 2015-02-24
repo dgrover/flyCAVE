@@ -49,8 +49,8 @@ float angleBetween(Point v1, Point v2, Point c)
 int _tmain(int argc, _TCHAR* argv[])
 {
 	osg::ref_ptr<osgViewer::Viewer> viewer;
-	FlyWorld vr("images", "displaySettings.txt", 912, 1140, 1920, 2.0, 11.0 + 2.0);
-	viewer = vr.setup();
+	FlyWorld mov("images", "displaySettings.txt", 912, 1140, 1920, 2.0, 11.0 + 2.0);
+	viewer = mov.setup();
 
 	int imageWidth = 256, imageHeight = 256;
 
@@ -120,7 +120,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		#pragma omp section
 		{
-			viewer->getSlave(0)._viewOffset = vr.getView();
+			viewer->getSlave(0)._viewOffset = mov.getView();
 
 			int number;
 			std::vector<int> numbers;
@@ -138,7 +138,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			int index = 0;
 			int currentImage = 0;
-			unsigned int n = vr.numImages;
+			unsigned int n = mov.numImages;
 
 			while (true)
 			{
@@ -151,7 +151,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						currentImage = 0;
 					}
 				}
-				vr.imageSequence->seek(((double)currentImage) / ((double)n));
+				mov.imageSequence->seek(((double)currentImage) / ((double)n));
 
 				viewer->frame();
 				index++;
