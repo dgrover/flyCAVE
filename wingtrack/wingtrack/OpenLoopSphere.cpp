@@ -46,6 +46,7 @@ static osgDB::DirectoryContents getImages(std::string directory)
 			if ((ext == "jpg") || (ext == "png") || (ext == "gif") || (ext == "rgb") || (ext == "bmp"))
 			{
 				images.push_back(filename);
+				
 			}
 		}
 	}
@@ -102,7 +103,7 @@ osg::ref_ptr<osg::Geode> OpenLoopSphere::createShapes()
 	//imageSequence->setLength(1.0/60.0*2.0);
 	//imageSequence->setLength(2.0);
 	//imageSequence->setTimeMultiplier(60.0);
-	imageSequence->setLoopingMode(osg::ImageStream::LoopingMode::NO_LOOPING);
+	//imageSequence->setLoopingMode(osg::ImageStream::LoopingMode::NO_LOOPING);
 	//imageSequence->play();
 
 

@@ -13,20 +13,7 @@ struct {
 	bool operator() (cv::Point pt1, cv::Point pt2) { return (pt1.y < pt2.y); }
 } mycomp;
 
-class Timer
-{
-public:
-	Timer() : beg_(clock_::now()) {}
-	void reset() { beg_ = clock_::now(); }
-	double elapsed() const {
-		return std::chrono::duration_cast<std::chrono::microseconds>
-			(clock_::now() - beg_).count();
-	}
 
-private:
-	typedef std::chrono::high_resolution_clock clock_;
-	std::chrono::time_point<clock_> beg_;
-};
 
 bool stream = true;
 bool track = false;
@@ -130,7 +117,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	float left_angle, right_angle;
 	int count = 0;
 
-	Timer tmr;
+
 
 	printf("Press [F1] to start/stop recording. Press [ESC] to exit.\n\n");
 
@@ -140,35 +127,66 @@ int _tmain(int argc, _TCHAR* argv[])
 	//	{
 	viewer->getSlave(0)._viewOffset = ols.getView();
 
-	//time_t start;
-	//time_t now;
-	//time(&start);
+
+	int number;
+	std::vector<int> numbers;
+	std::ifstream file("sequence.txt", std::ios::in);
+
+	if (file.is_open())
+	{
+		while (file >> number)
+		{
+			numbers.push_back(number);
+		}
+
+		file.close();
+	}
+
 	int index = 0;
+	int currentImage = 0;
 	unsigned int n = ols.numImages;
-	double r = ols.fps;//
-	r = 60.0;
-	tmr.reset();
+
 			while (true)
 			{
-				//if (record)
-				//{
-					ols.imageSequence->seek(index/60 % 2);
-	
-				//	printf("%i", (((int)(tmr.elapsed()*r)) % n));
-					//printf("%i\n", ((int)((tmr.elapsed()/1000)*r)) % n);
-					//ols.imageSequence->seek(((int)((tmr.elapsed() / 1000000.0)*r)) % n);
-					//printf("%i\n", ((int)((tmr.elapsed() / 1000000.0)*r)) % n);
-					//printf("%f, ", tmr.elapsed()/1000000.0*r);
-					//printf("%i\n", ((int)((tmr.elapsed() / 1000000.0)*r)) % n);
-					
-					viewer->frame();
-					index++;
-			//	}
+				//ols.imageSequence->seek(((double)(index/10 % n))/((double)n));
+				
+				//index++;
+				//viewer->frame();
 
-			//	if (!stream)
-					//break;
+					//ols.imageSequence->seek(index/(60/r) % n);
+
+				while (numbers[currentImage] == 0)
+				{
+					currentImage++;
+
+					if (currentImage >= n)
+					{
+						currentImage = 0;
+					}
+				}
+					ols.imageSequence->seek(((double)currentImage)/((double)n));
+					//printf("%i \n",currentImage );
+				
+
+				viewer->frame();
+					index++;
+			
+					if (index >= numbers[currentImage])
+					{
+						currentImage++;
+						index=0;
+					}
+
+					if (currentImage == n)
+					{
+						currentImage = 0;
+						index = 0;
+					}
+					
+				if (!stream)
+					break;
 			}
-	//	}
+		/*}*/
 
 	//	#pragma omp section
 	//	{
