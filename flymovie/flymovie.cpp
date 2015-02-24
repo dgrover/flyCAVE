@@ -48,9 +48,10 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	osg::ref_ptr<osgViewer::Viewer> viewer;
-	FlyWorld mov("images", "displaySettings.txt", 912, 1140, 1920, 2.0, 11.0 + 2.0);
-	viewer = mov.setup();
+	FlyWorld mov("images", "sequence.txt", "displaySettings.txt", 912, 1140, 1920, 2.0, 11.0 + 2.0);
+	osg::ref_ptr<osgViewer::Viewer> viewer = mov.setup();
+
+	printf("%d images read [OK]\n", mov.numImages);
 
 	int imageWidth = 256, imageHeight = 256;
 
@@ -122,50 +123,15 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			viewer->getSlave(0)._viewOffset = mov.getView();
 
-			int number;
-			std::vector<int> numbers;
-			std::ifstream file("sequence.txt", std::ios::in);
-
-			if (file.is_open())
-			{
-				while (file >> number)
-				{
-					numbers.push_back(number);
-				}
-
-				file.close();
-			}
-
-			int index = 0;
-			int currentImage = 0;
-			unsigned int n = mov.numImages;
-
 			while (true)
 			{
-				while (numbers[currentImage] == 0)
+				for (int i = 0; i < mov.numImages; i++)
 				{
-					currentImage++;
-
-					if (currentImage >= n)
+					for (int j = 0; j < mov.sequence[i]; j++)
 					{
-						currentImage = 0;
+						mov.imageSequence->seek(((double)i) / ((double)(mov.numImages - 1)));
+						viewer->frame();
 					}
-				}
-				mov.imageSequence->seek(((double)currentImage) / ((double)n));
-
-				viewer->frame();
-				index++;
-
-				if (index >= numbers[currentImage])
-				{
-					currentImage++;
-					index = 0;
-				}
-
-				if (currentImage == n)
-				{
-					currentImage = 0;
-					index = 0;
 				}
 
 				if (!stream)
@@ -232,10 +198,6 @@ int _tmain(int argc, _TCHAR* argv[])
 							//	left_angle = angleBetween(hull[i].front(), Point2f(imageWidth / 2, 0), center);
 							//else
 							//	right_angle = angleBetween(hull[i].front(), Point2f(imageWidth / 2, 0), center);
-
-
-
-
 						}
 					}
 				}

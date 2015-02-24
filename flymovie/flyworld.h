@@ -26,18 +26,21 @@ private:
 	osg::ref_ptr<osgViewer::Viewer> viewer;
 	
 	const char* imageFileName;
+	const char* sequenceFile;
 	const char* displayFile;
-
+	
 	osg::ref_ptr<osg::Geode> createShapes();
 	void setView();
+	void setSequence();
 
 public:
 
 	osg::ref_ptr<osg::ImageSequence> imageSequence;
+	std::vector<int> sequence;
 	unsigned int numImages;
 	
-	FlyWorld(char *imgFile, char *settings, double w, double h, double x, float c, double d) :
-		imageFileName(imgFile), displayFile(settings), viewWidth(w), viewHeight(h), xOffset(x), yOffset(0), cRadius(c), distance(d)
+	FlyWorld(char *imgFile, char *sequence, char *settings, double w, double h, double x, float c, double d) :
+		imageFileName(imgFile), sequenceFile(sequence), displayFile(settings), viewWidth(w), viewHeight(h), xOffset(x), yOffset(0), cRadius(c), distance(d)
 	{
 		viewer = new osgViewer::Viewer();
 		cam1View = osg::Matrixd::translate(0.0, 0.0, distance)*osg::Matrixd::rotate(osg::DegreesToRadians(-90.0), osg::Vec3(0, 1, 0))*osg::Matrixd::translate(0.0, 0.0, -1 * distance);
