@@ -121,12 +121,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		#pragma omp section
 		{
+			viewer->getSlave(0)._viewOffset = vr.getView();
+
 			while (true)
 			{
 				if (!wbd.empty())
 				{
-					vr.angle = wbd.front();
-					viewer->getSlave(0)._viewOffset = vr.getView();
+					vr.angle += wbd.front();
 					viewer->frame();
 
 					#pragma omp critical
