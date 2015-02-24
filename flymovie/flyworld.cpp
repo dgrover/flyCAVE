@@ -31,13 +31,9 @@ static osgDB::DirectoryContents getImages(std::string directory)
 
 osg::ref_ptr<osg::Geode> FlyWorld::createShapes()
 {
-	fps = 60.0;
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 	osg::ref_ptr<osg::StateSet> stateset = new osg::StateSet();
 	stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
-	
-	//osg::ref_ptr<osg::Image> image = new osg::Image();
-	//image = osgDB::readImageFile(imageFileName);
 	
 	osgDB::DirectoryContents images = getImages(imageFileName);
 	imageSequence = new osg::ImageSequence;

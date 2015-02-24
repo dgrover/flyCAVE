@@ -35,8 +35,7 @@ public:
 
 	osg::ref_ptr<osg::ImageSequence> imageSequence;
 	unsigned int numImages;
-	double fps;
-
+	
 	FlyWorld(char *imgFile, char *settings, double w, double h, double x, float c, double d) :
 		imageFileName(imgFile), displayFile(settings), viewWidth(w), viewHeight(h), xOffset(x), yOffset(0), cRadius(c), distance(d)
 	{
