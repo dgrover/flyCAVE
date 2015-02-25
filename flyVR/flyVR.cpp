@@ -50,7 +50,7 @@ float angleBetween(Point v1, Point v2, Point c)
 int _tmain(int argc, _TCHAR* argv[])
 {
 	osg::ref_ptr<osgViewer::Viewer> viewer;
-	FlyWorld vr("blackLine.jpg", "displaySettings.txt", 912, 1140, 1920, 2.0, 11.0 + 2.0);
+	FlyWorld vr("stripe.bmp", "displaySettings.txt", 912, 1140, 1920, 2.0, 11.0 + 2.0);
 	viewer = vr.setup();
 
 	int imageWidth = 256, imageHeight = 256;
@@ -117,9 +117,9 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("Press [F1] to start/stop recording. Press [ESC] to exit.\n\n");
 
-#pragma omp parallel sections num_threads(4)
+	#pragma omp parallel sections num_threads(4)
 	{
-#pragma omp section
+		#pragma omp section
 		{
 			viewer->getSlave(0)._viewOffset = vr.getView();
 
@@ -130,7 +130,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					vr.angle += wbd.front();
 					viewer->frame();
 
-#pragma omp critical
+					#pragma omp critical
 					{
 						wbd = queue<float>();
 					}
@@ -141,7 +141,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			}
 		}
 
-#pragma omp section
+		#pragma omp section
 		{
 			int ltime = 0;
 			int ctime = 0;
@@ -200,10 +200,6 @@ int _tmain(int argc, _TCHAR* argv[])
 							//	left_angle = angleBetween(hull[i].front(), Point2f(imageWidth / 2, 0), center);
 							//else
 							//	right_angle = angleBetween(hull[i].front(), Point2f(imageWidth / 2, 0), center);
-
-
-
-
 						}
 					}
 				}
@@ -227,7 +223,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				if (record)
 					putText(frame, to_string(count++), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
-#pragma omp critical
+				#pragma omp critical
 				{
 					maskStream.push(mask);
 					dispStream.push(frame);
@@ -277,7 +273,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			}
 		}
 
-#pragma omp section
+		#pragma omp section
 		{
 			while (true)
 			{
@@ -296,7 +292,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					fout.WriteWBA(leftwba.front(), rightwba.front());
 					fout.nframes++;
 
-#pragma omp critical
+					#pragma omp critical
 					{
 						imageStream.pop();
 						timeStamps.pop();
@@ -328,7 +324,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			}
 		}
 
-#pragma omp section
+		#pragma omp section
 		{
 			namedWindow("controls", WINDOW_AUTOSIZE);
 			createTrackbar("thresh", "controls", &thresh, 255);
@@ -344,7 +340,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					imshow("image", dispStream.back());
 					imshow("mask", maskStream.back());
 
-#pragma omp critical
+					#pragma omp critical
 					{
 						dispStream = queue<Mat>();
 						maskStream = queue<Mat>();
