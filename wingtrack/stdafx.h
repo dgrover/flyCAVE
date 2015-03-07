@@ -9,6 +9,7 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <tchar.h>
 #include <vector>
 
@@ -24,6 +25,6 @@
 #include "fmfreader.h"
 #include "fmfwriter.h"
 #include "pgrcam.h"
-
+#include "arduino.h"
 
 // TODO: reference additional headers your program requires here

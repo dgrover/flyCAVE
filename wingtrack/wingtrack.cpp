@@ -16,6 +16,7 @@ struct {
 bool stream = true;
 bool track = false;
 bool record = false;
+bool laser = false;
 
 queue <Mat> dispStream;
 queue <Mat> maskStream;
@@ -93,6 +94,11 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("[OK]\n");
 
+	Serial* SP = new Serial("COM3");    // adjust as needed
+
+	if (SP->IsConnected())
+		printf("Connecting arduino [OK]\n");
+
 	FlyCapture2::Image img;
 	FlyCapture2::TimeStamp stamp;
 
@@ -105,7 +111,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
 
 	Point2f center(imageWidth / 2, imageHeight / 2);
-	int key_state = 0;
+	int record_key_state = 0;
+	int laser_key_state = 0;
 
 	float left_angle, right_angle;
 	int count = 0;
@@ -211,16 +218,36 @@ int _tmain(int argc, _TCHAR* argv[])
 
 				if (GetAsyncKeyState(VK_F1))
 				{
-					if (!key_state)
+					if (!record_key_state)
 					{
 						record = !record;
 						count = 0;
 					}
 
-					key_state = 1;
+					record_key_state = 1;
 				}
 				else
-					key_state = 0;
+					record_key_state = 0;
+
+
+				if (GetAsyncKeyState(VK_F2))
+				{
+					if (!laser_key_state)
+					{
+						laser = !laser;
+
+						if (laser)
+							SP->WriteData("1", 1);
+						else
+							SP->WriteData("0", 1);
+					}
+
+					laser_key_state = 1;
+
+				}
+				else
+					laser_key_state = 0;
+
 
 				if (GetAsyncKeyState(VK_RETURN))
 					track = true;
@@ -331,6 +358,9 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//fin.Close();
 	wingcam.Stop();
+	
+	if (SP->IsConnected())
+		SP->WriteData("0", 1);
 
 	return 0;
 }

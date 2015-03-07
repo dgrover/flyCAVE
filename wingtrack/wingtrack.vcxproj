@@ -146,6 +146,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="arduino.h" />
     <ClInclude Include="fmfreader.h" />
     <ClInclude Include="fmfwriter.h" />
     <ClInclude Include="pgrcam.h" />
@@ -153,6 +154,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="arduino.cpp" />
     <ClCompile Include="fmfreader.cpp" />
     <ClCompile Include="fmfwriter.cpp" />
     <ClCompile Include="pgrcam.cpp" />

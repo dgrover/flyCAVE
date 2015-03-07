@@ -33,6 +33,9 @@
     <ClInclude Include="pgrcam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="arduino.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -48,6 +51,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="pgrcam.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
