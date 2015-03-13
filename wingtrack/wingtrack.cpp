@@ -283,7 +283,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						printf("Recording ");
 					}
 
-					fout.WriteFrame(timeStamps.front(), imageStream.front());
+					fout.WriteFrame(imageStream.front());
 					fout.WriteLog(timeStamps.front());
 					fout.WriteWBA(leftwba.front(), rightwba.front());
 					fout.nframes++;

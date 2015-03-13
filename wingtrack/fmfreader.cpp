@@ -43,7 +43,7 @@ int FmfReader::ReadHeader()
 
 	buf = new char[bytesPerChunk];
 
-	maxFramesInFile = (unsigned long int)nframes;
+	//maxFramesInFile = (unsigned long int)nframes;
 
 	printf(
 		"\n*** VIDEO INFORMATION ***\n"
@@ -72,13 +72,20 @@ void FmfReader::GetImageSize(int &imageWidth, int &imageHeight)
 	imageHeight = SizeY;
 }
 
-Mat FmfReader::ReadFrame(unsigned long frameIndex)
+//Mat FmfReader::ReadFrame(unsigned long frameIndex)
+Mat FmfReader::ReadFrame(int frameIndex)
 {
-	if ((long)frameIndex >= 0L && (long)frameIndex < maxFramesInFile)
-		fseek(fp, frameIndex*bytesPerChunk + 28, SEEK_SET);
+	//if ((long)frameIndex >= 0L && (long)frameIndex < maxFramesInFile)
+	//	fseek(fp, frameIndex*bytesPerChunk + 28, SEEK_SET);
 
-	fread(buf, sizeof(double), 1, fp);
-	fread(buf, bytesPerChunk - sizeof(double), 1, fp);
+	//fread(buf, sizeof(double), 1, fp);
+	//fread(buf, bytesPerChunk - sizeof(double), 1, fp);
+
+	if (frameIndex >= 0 && frameIndex < nframes)
+		_fseeki64(fp, frameIndex*bytesPerChunk + 28, SEEK_SET);
+
+	fread(buf, bytesPerChunk, 1, fp);
+
 
 	Mat frame = Mat(SizeY, SizeX, CV_8UC1, buf, (bytesPerChunk - sizeof(double)) / SizeY); //byte size of each row of frame
 	return frame;

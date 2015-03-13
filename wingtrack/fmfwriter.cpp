@@ -82,7 +82,8 @@ void FmfWriter::InitHeader(unsigned __int32 x, unsigned __int32 y)
 	fmfVersion = 1;
 	SizeY = y;
 	SizeX = x;
-	bytesPerChunk = y*x + sizeof(double);
+	//bytesPerChunk = y*x + sizeof(double);
+	bytesPerChunk = y*x;
 	nframes = 0;
 }
 
@@ -97,11 +98,12 @@ void FmfWriter::WriteHeader()
 	fwrite(&nframes, sizeof(unsigned __int64), 1, fp);
 }
 
-void FmfWriter::WriteFrame(TimeStamp st, Image img)
+//void FmfWriter::WriteFrame(TimeStamp st, Image img)
+void FmfWriter::WriteFrame(Image img)
 {
-	double dst = (double) st.seconds;
+	//double dst = (double) st.seconds;
 
-	fwrite(&dst, sizeof(double), 1, fp);
+	//fwrite(&dst, sizeof(double), 1, fp);
 	fwrite(img.GetData(), img.GetDataSize(), 1, fp);
 }
 
