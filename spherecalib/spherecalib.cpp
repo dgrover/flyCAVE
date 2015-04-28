@@ -1,9 +1,9 @@
 #include "stdafx.h"
 
-int xoffset = 1920;
+int xoffset = 0;// 1920;
 int yoffset = 0;
-int viewWidth = 1280;// 1920;
-int viewHeight = 800 * 2;// 1200 * 2;
+double viewWidth = 1920;
+double viewHeight = 1200 * 2;
 double radius = 2.0;
 double defaultDistance = (radius + 8.0);
 double distance = defaultDistance;
@@ -12,7 +12,7 @@ double cull = defaultCull;
 double loadedDistance = defaultDistance;
 double loadedCull = defaultCull;
 double camHorLoc = 0;
-double camVertLoc = radius*-1;;
+double camVertLoc = radius*-1.0;
 double transInc = 0.1;
 double depth = 0;
 osg::Vec4 backgroundColor = osg::Vec4(0, 0, 0, 1);
@@ -80,6 +80,10 @@ bool keyboardHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionA
 			transInc = transInc / 2.0;
 			break;
 
+		case 'p':
+			printInfo();
+			break;
+
 		default:
 			return false;
 			break;
@@ -104,7 +108,6 @@ osg::ref_ptr<osg::Geode> createShapes()
 
 	if (image)
 	{
-
 		osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D(image);
 		texture->setWrap(osg::Texture::WRAP_S, osg::Texture::REPEAT);
 		osg::ref_ptr<osg::TexMat> texmat = new osg::TexMat;
@@ -152,7 +155,7 @@ void writeInfo()
 
 void setStartingViews()
 {
-	float number;
+	double number;
 	std::ifstream file(displayFile, std::ios::in);
 
 	if (file.is_open())
@@ -219,7 +222,6 @@ void setup()
 	viewer.setCameraManipulator(NULL);
 	viewer.getCamera()->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 	viewer.getCamera()->setCullingMode(osg::CullSettings::ENABLE_ALL_CULLING);
-
 }
 
 
@@ -228,7 +230,7 @@ void run()
 	while (!viewer.done())
 	{
 		viewer.getCamera()->setViewMatrixAsLookAt(osg::Vec3d(camHorLoc, distance, camVertLoc), osg::Vec3d(camHorLoc, depth, camVertLoc), up);
-		viewer.getCamera()->setProjectionMatrixAsPerspective(40.0, 1920.0 / (1200.0*2.0), distance - radius, distance - cull);
+		viewer.getCamera()->setProjectionMatrixAsPerspective(40.0, viewWidth / viewHeight, distance - radius, distance - cull);
 		viewer.frame();
 	}
 

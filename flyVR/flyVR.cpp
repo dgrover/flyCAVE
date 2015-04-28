@@ -49,9 +49,9 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	osg::ref_ptr<osgViewer::Viewer> viewer;
-	FlyWorld vr("stripe.bmp", "displaySettings.txt", 912, 1140, 1920, 2.0, 11.0 + 2.0);
-	viewer = vr.setup();
+	
+	FlyWorld vr("stripe.bmp", "displaySettings.txt", 1920, 1200*2, 0/*1920*/, 2.0);
+	osg::ref_ptr<osgViewer::Viewer> viewer=vr.getViewer();
 
 	int imageWidth = 256, imageHeight = 256;
 
@@ -121,7 +121,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		#pragma omp section
 		{
-			viewer->getSlave(0)._viewOffset = vr.getView();
 
 			while (true)
 			{

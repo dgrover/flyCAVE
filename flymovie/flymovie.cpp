@@ -48,8 +48,8 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	FlyWorld mov("images", "sequence.txt", "displaySettings.txt", 912, 1140, 1920, 2.0, 11.0 + 2.0);
-	osg::ref_ptr<osgViewer::Viewer> viewer = mov.setup();
+	FlyWorld mov("images", "sequence.txt", "displaySettings.txt", 1920, 1200*2, 0, 2.0);
+	osg::ref_ptr<osgViewer::Viewer> viewer = mov.getViewer();
 
 	printf("%d images read [OK]\n", mov.numImages);
 
@@ -121,7 +121,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		#pragma omp section
 		{
-			viewer->getSlave(0)._viewOffset = mov.getView();
+			//viewer->getSlave(0)._viewOffset = mov.getView();
 
 			while (true)
 			{
