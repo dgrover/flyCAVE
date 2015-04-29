@@ -18,9 +18,6 @@ bool track = false;
 bool record = false;
 bool laser = false;
 
-queue <Mat> dispStream;
-queue <Mat> maskStream;
-
 queue <Image> imageStream;
 queue <TimeStamp> timeStamps;
 
@@ -45,6 +42,23 @@ float angleBetween(Point v1, Point v2, Point c)
 		return CV_PI;
 	else
 		return acos(a) * 180 / CV_PI;
+}
+
+int ConvertTimeToFPS(int ctime, int ltime)
+{
+	int dtime;
+
+	if (ctime < ltime)
+		dtime = ctime + (8000 - ltime);
+	else
+		dtime = ctime - ltime;
+
+	if (dtime > 0)
+		dtime = 8000 / dtime;
+	else
+		dtime = 0;
+
+	return dtime;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -82,7 +96,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	error = wingcam.Connect(guid);
 	error = wingcam.SetCameraParameters(imageWidth, imageHeight);
 	//wingcam.GetImageSize(imageWidth, imageHeight);
-	error = wingcam.SetProperty(SHUTTER, 4.925);
+	error = wingcam.SetProperty(SHUTTER, 4.887);
 	error = wingcam.SetProperty(GAIN, 0.0);
 	error = wingcam.Start();
 
@@ -94,7 +108,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("[OK]\n");
 
-	Serial* SP = new Serial("COM3");    // adjust as needed
+	Serial* SP = new Serial("COM4");    // adjust as needed
 
 	if (SP->IsConnected())
 		printf("Connecting arduino [OK]\n");
@@ -104,6 +118,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Mat frame, mask, fly_blob, body_mask;
 
+	Mat dispStream, maskStream;
+	
 	int thresh = 190;
 	int body_thresh = 150;
 
@@ -117,15 +133,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	float left_angle, right_angle;
 	int count = 0;
 
-	printf("Press [F1] to start/stop recording. Press [ESC] to exit.\n\n");
-
+	//Press [F1] to start/stop recording. Press [ESC] to exit
 	#pragma omp parallel sections num_threads(3)
 	{
 		#pragma omp section
 		{
 			int ltime = 0;
-			int ctime = 0;
-			int dtime = 0;
+			int fps = 0;
 
 			while (true)
 			{
@@ -175,36 +189,23 @@ int _tmain(int argc, _TCHAR* argv[])
 								left_angle = angleBetween(hull[i].front(), hull[i].back(), center);
 							else
 								right_angle = angleBetween(hull[i].front(), hull[i].back(), center);
-
-
-							
+					
 						}
 					}
 				}
 
-				ctime = stamp.cycleCount;
+				fps = ConvertTimeToFPS(stamp.cycleCount, ltime);
+				ltime = stamp.cycleCount;
 
-				if (ctime < ltime)
-					dtime = ctime + (8000 - ltime);
-				else
-					dtime = ctime - ltime;
-
-				if (dtime > 0)
-					dtime = 8000 / dtime;
-				else
-					dtime = 0;
-
-				ltime = ctime;
-
-				putText(frame, to_string(dtime), Point(225, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+				putText(frame, to_string(fps), Point(225, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
 				if (record)
 					putText(frame, to_string(count++), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 				
 				#pragma omp critical
 				{
-					maskStream.push(mask);
-					dispStream.push(frame);
+					maskStream = mask.clone();
+					dispStream = frame.clone();
 
 					if (record)
 					{
@@ -271,6 +272,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		#pragma omp section
 		{
+			Image timage;
+			TimeStamp tstamp;
+			float tleft, tright;
+
 			while (true)
 			{
 				if (!imageStream.empty())
@@ -283,18 +288,24 @@ int _tmain(int argc, _TCHAR* argv[])
 						printf("Recording ");
 					}
 
-					fout.WriteFrame(imageStream.front());
-					fout.WriteLog(timeStamps.front());
-					fout.WriteWBA(leftwba.front(), rightwba.front());
-					fout.nframes++;
-				
 					#pragma omp critical
 					{
+						timage = imageStream.front();
+						tstamp = timeStamps.front();
+						tleft = leftwba.front();
+						tright = rightwba.front();
+
 						imageStream.pop();
 						timeStamps.pop();
 						leftwba.pop();
 						rightwba.pop();
 					}
+
+					fout.WriteFrame(timage);
+					fout.WriteLog(tstamp);
+					fout.WriteWBA(tleft, tright);
+					fout.nframes++;
+
 				}
 				else
 				{
@@ -326,23 +337,28 @@ int _tmain(int argc, _TCHAR* argv[])
 			createTrackbar("thresh", "controls", &thresh, 255);
 			createTrackbar("body thresh", "controls", &body_thresh, 255);
 			
+			Mat tframe, tmask;
+
 			while (true)
 			{
-				if (!dispStream.empty())
+
+				#pragma omp critical
 				{
-					line(dispStream.back(), Point((imageWidth / 2) - 10, imageHeight / 2), Point((imageWidth / 2) + 10, imageHeight / 2), 255);  //crosshair horizontal
-					line(dispStream.back(), Point(imageWidth / 2, (imageHeight / 2) - 10), Point(imageWidth / 2, (imageHeight / 2) + 10), 255);  //crosshair vertical
-
-					imshow("image", dispStream.back());
-					imshow("mask", maskStream.back());
-
-					#pragma omp critical
-					{
-						dispStream = queue<Mat>();
-						maskStream = queue<Mat>();
-					}
+					tframe = dispStream.clone();
+					tmask = maskStream.clone();
 				}
 
+				if (!tframe.empty())
+				{
+					line(tframe, Point((imageWidth / 2) - 10, imageHeight / 2), Point((imageWidth / 2) + 10, imageHeight / 2), 255);  //crosshair horizontal
+					line(tframe, Point(imageWidth / 2, (imageHeight / 2) - 10), Point(imageWidth / 2, (imageHeight / 2) + 10), 255);  //crosshair vertical
+
+					imshow("image", tframe);
+				}
+
+				if (!tmask.empty())
+					imshow("mask", tmask);
+				
 				waitKey(1);
 
 				if (!stream)
@@ -353,7 +369,6 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 			}
 		}
-
 	}
 
 	//fin.Close();
