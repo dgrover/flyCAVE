@@ -1,9 +1,9 @@
 #include "stdafx.h"
 
-int xoffset = 0;// 1920;
+int xoffset = 1920;
 int yoffset = 0;
-double viewWidth = 1920;
-double viewHeight = 1200 * 2;
+double viewWidth = 1280.0;// 1920.0 / 2.0;
+double viewHeight = 800.0*2.0;// 1200 * 2;
 double radius = 2.0;
 double defaultDistance = (radius + 8.0);
 double distance = defaultDistance;
@@ -121,7 +121,7 @@ osg::ref_ptr<osg::Geode> createShapes()
 	osg::ref_ptr<osg::CullFace> cull = new osg::CullFace(osg::CullFace::Mode::BACK);
 	stateset->setAttributeAndModes(cull, osg::StateAttribute::ON);
 	osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
-	hints->setDetailRatio(0.8f);
+	hints->setDetailRatio(10.0f);
 	hints->setCreateBody(true);
 	hints->setCreateBackFace(false);
 	hints->setCreateFrontFace(true);
@@ -198,7 +198,8 @@ void setStartingViews()
 void setup()
 {
 	osg::ref_ptr<osg::Group> root = new osg::Group;
-	root->addChild(createShapes());
+	osg::ref_ptr<osg::Geode> geode = createShapes();
+	root->addChild(geode);
 	viewer.setSceneData(root);
 	setStartingViews();
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
@@ -212,7 +213,8 @@ void setup()
 
 	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 	viewer.getCamera()->setGraphicsContext(gc.get());
-	viewer.getCamera()->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
+	osg::ref_ptr<osg::Viewport> vp = new osg::Viewport(0, 0, traits->width, traits->height);
+	viewer.getCamera()->setViewport(vp);
 	GLenum buffer = traits->doubleBuffer ? GL_BACK : GL_FRONT;
 	viewer.getCamera()->setDrawBuffer(buffer);
 	viewer.getCamera()->setReadBuffer(buffer);
@@ -222,6 +224,38 @@ void setup()
 	viewer.setCameraManipulator(NULL);
 	viewer.getCamera()->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 	viewer.getCamera()->setCullingMode(osg::CullSettings::ENABLE_ALL_CULLING);
+
+
+	osg::ref_ptr<osg::Camera> cam2 = new osg::Camera;
+
+	osg::ref_ptr<osg::GraphicsContext::Traits> traits2 = new osg::GraphicsContext::Traits;
+	traits2->x = xoffset+viewWidth;
+	traits2->y = yoffset;
+	traits2->width = viewWidth;
+	traits2->height = viewHeight;
+	traits2->windowDecoration = false;
+	traits2->doubleBuffer = true;
+	traits2->sharedContext = 0;
+
+	osg::ref_ptr<osg::GraphicsContext> gc2 = osg::GraphicsContext::createGraphicsContext(traits2.get());
+	cam2->setGraphicsContext(gc2.get());
+	cam2->setViewport(vp);
+	viewer.addSlave(cam2);
+
+
+	viewer.getCamera()->setViewMatrixAsLookAt(osg::Vec3d(camHorLoc, distance, camVertLoc), osg::Vec3d(camHorLoc, depth, camVertLoc), up);
+	viewer.getCamera()->setProjectionMatrixAsPerspective(40.0, viewWidth / viewHeight, distance - radius, distance - cull);
+	viewer.getSlave(0)._viewOffset = osg::Matrixd::translate(0.0, 0.0, distance)*osg::Matrixd::rotate(osg::DegreesToRadians(-90.0), osg::Vec3(0, 1, 0))*osg::Matrixd::translate(0.0, 0.0, -1 * distance);
+
+	/*
+	osg::Matrixd viewMatrix = osg::amera->getViewMatrix(); osg::Matrixd projMatrix = osgcamera->getProjectionMatrix(); GLint viewport[4];
+	viewport[0] = osgcamera->getViewport()->x();
+	viewport[1] = osgcamera->getViewport()->y();
+	viewport[2] = osgcamera->getViewport()->width();
+	viewport[3] = osgcamera->getViewport()->height();
+	then you might pass viewMatrix.ptr()projMatrix.ptr()viewport to gluUnProject function*/
+		
+	
 }
 
 
@@ -231,6 +265,7 @@ void run()
 	{
 		viewer.getCamera()->setViewMatrixAsLookAt(osg::Vec3d(camHorLoc, distance, camVertLoc), osg::Vec3d(camHorLoc, depth, camVertLoc), up);
 		viewer.getCamera()->setProjectionMatrixAsPerspective(40.0, viewWidth / viewHeight, distance - radius, distance - cull);
+		viewer.getSlave(0)._viewOffset = osg::Matrixd::translate(0.0, 0.0, distance)*osg::Matrixd::rotate(osg::DegreesToRadians(-110.0), osg::Vec3(0, 1, 0))*osg::Matrixd::translate(0.0, 0.0, -1 * distance);
 		viewer.frame();
 	}
 

@@ -146,7 +146,8 @@ void FlyWorld::setup()
 	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
 	viewer->getCamera()->setGraphicsContext(gc.get());
-	viewer->getCamera()->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
+	osg::ref_ptr<osg::Viewport> vp = new osg::Viewport(0, 0, traits->width, traits->height);
+	viewer->getCamera()->setViewport(vp);
 	GLenum buffer = traits->doubleBuffer ? GL_BACK : GL_FRONT;
 	viewer->getCamera()->setDrawBuffer(buffer);
 	viewer->getCamera()->setReadBuffer(buffer);
@@ -157,6 +158,26 @@ void FlyWorld::setup()
 	viewer->getCamera()->setViewMatrixAsLookAt(osg::Vec3d(camHorLoc, distance, camVertLoc), osg::Vec3d(camHorLoc, depth, camVertLoc), osg::Vec3d(0, 0, 1));
 	viewer->getCamera()->setProjectionMatrixAsPerspective(40.0, viewWidth / viewHeight, distance - radius, distance - cull);
 	viewer->setCameraManipulator(NULL);
+
+
+
+
+	osg::ref_ptr<osg::Camera> cam2 = new osg::Camera;
+
+	osg::ref_ptr<osg::GraphicsContext::Traits> traits2 = new osg::GraphicsContext::Traits;
+	traits2->x = xOffset + viewWidth;
+	traits2->y = yOffset;
+	traits2->width = viewWidth;
+	traits2->height = viewHeight;
+	traits2->windowDecoration = false;
+	traits2->doubleBuffer = true;
+	traits2->sharedContext = 0;
+
+	osg::ref_ptr<osg::GraphicsContext> gc2 = osg::GraphicsContext::createGraphicsContext(traits2.get());
+	cam2->setGraphicsContext(gc2.get());
+	cam2->setViewport(vp);
+	viewer->addSlave(cam2);
+	viewer->getSlave(0)._viewOffset = osg::Matrixd::translate(0.0, 0.0, distance)*osg::Matrixd::rotate(osg::DegreesToRadians(-90.0), osg::Vec3(0, 1, 0))*osg::Matrixd::translate(0.0, 0.0, -1 * distance);
 }
 
 osg::ref_ptr<osgViewer::Viewer> FlyWorld::getViewer()
