@@ -63,7 +63,7 @@ int ConvertTimeToFPS(int ctime, int ltime)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	int imageWidth = 256, imageHeight = 256;
+	int imageWidth = 320, imageHeight = 320;
 
 	PGRcam wingcam;
 
@@ -120,11 +120,13 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Mat dispStream, maskStream;
 	
-	int thresh = 190;
+	int thresh = 200;
 	int body_thresh = 150;
 
-	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
-	Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+	Mat element = getStructuringElement(MORPH_RECT, Size(3, 3), Point(1,1));
+	
+	//Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+	//Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
 
 	Point2f center(imageWidth / 2, imageHeight / 2);
 	int record_key_state = 0;
@@ -152,7 +154,8 @@ int _tmain(int argc, _TCHAR* argv[])
 				threshold(frame, body_mask, body_thresh, 255, THRESH_BINARY_INV);
 				threshold(frame, mask, thresh, 255, THRESH_BINARY_INV);
 
-				dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 3);
+				dilate(body_mask, body_mask, element, Point(-1, -1), 3);
+				//dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 3);
 				body_mask = Scalar::all(255) - body_mask;
 
 				mask &= body_mask;
@@ -162,8 +165,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 				if (track)
 				{
-					erode(mask, mask, erodeElement, Point(-1, -1), 3);
-					dilate(mask, mask, dilateElement, Point(-1, -1), 3);
+					morphologyEx(mask, mask, MORPH_OPEN, element, Point(-1, -1), 2);
+					
+					//erode(mask, mask, erodeElement, Point(-1, -1), 3);
+					//dilate(mask, mask, dilateElement, Point(-1, -1), 3);
 
 					// Find contours
 					vector<vector<Point>> contours;
@@ -178,6 +183,7 @@ int _tmain(int argc, _TCHAR* argv[])
 							convexHull(Mat(contours[i]), hull[i], false);
 							
 							drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							drawContours(mask, contours, i, Scalar::all(255), FILLED, 1);
 							drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
 							std::sort(hull[i].begin(), hull[i].end(), mycomp);
@@ -197,7 +203,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				fps = ConvertTimeToFPS(stamp.cycleCount, ltime);
 				ltime = stamp.cycleCount;
 
-				putText(frame, to_string(fps), Point(225, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+				putText(frame, to_string(fps), Point(imageWidth-50, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
 				if (record)
 					putText(frame, to_string(count++), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
