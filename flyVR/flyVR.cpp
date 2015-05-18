@@ -50,7 +50,7 @@ float angleBetween(Point v1, Point v2, Point c)
 int _tmain(int argc, _TCHAR* argv[])
 {
 	
-	FlyWorld vr("stripe.bmp", "displaySettings.txt", 1280, 800*2, 1920, 2.0);
+	FlyWorld vr("stripe.bmp", "displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
 	osg::ref_ptr<osgViewer::Viewer> viewer=vr.getViewer();
 
 	int imageWidth = 256, imageHeight = 256;

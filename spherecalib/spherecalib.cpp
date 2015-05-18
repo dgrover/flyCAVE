@@ -1,25 +1,35 @@
 #include "stdafx.h"
 
-int xoffset = 1920;
-int yoffset = 0;
-double viewWidth = 428;// 1280.0 / 3.0;// 1920.0 / 3.0;
-double viewWidth2 =  426;
-double viewHeight =  800.0*2.0;// 1200 * 2;
+int xOffset = 1920;
+int yOffset = 0;
+
+double viewWidth = 912/3;
+double viewHeight =  1140*2;
+
 double radius = 2.0;
 double defaultDistance = (radius + 8.0);
-double distance = defaultDistance;
-double distance2 = defaultDistance;
+double centerDistance = defaultDistance;
+double sideDistance = defaultDistance;
+
 double defaultCull = 0.0;
-double cull = defaultCull;
-double cull2 = defaultCull;
-double loadedDistance = defaultDistance;
-double loadedCull = defaultCull;
-double loadedDistance2 = defaultDistance;
-double loadedCull2 = defaultCull;
+double centerCull = defaultCull;
+double sideCull = defaultCull;
+
+double loadedCenterDistance = defaultDistance;
+double loadedCenterCull = defaultCull;
+double loadedSideDistance = defaultDistance;
+double loadedSideCull = defaultCull;
+
 double camHorLoc = 0;
 double camVertLoc = radius*-1.0;
 double transInc = 0.1;
 double depth = 0;
+
+int loadedSideVPOffset = 0;
+int loadedCenterVPOffset = 0;
+int sideVPOffset = 0;
+int centerVPOffset = 0;
+
 osg::Vec4 backgroundColor = osg::Vec4(0, 0, 0, 1);
 osg::Vec3d up = osg::Vec3d(0, 0, 1); //up vector
 const char* imageFileName = "images//numberline.gif";//"vert_stripe.bmp";
@@ -35,8 +45,8 @@ void run();
 
 class keyboardHandler : public osgGA::GUIEventHandler
 {
-public:
-	virtual bool handle(const osgGA::GUIEventAdapter&, osgGA::GUIActionAdapter&);
+	public:
+		virtual bool handle(const osgGA::GUIEventAdapter&, osgGA::GUIActionAdapter&);
 };
 
 bool keyboardHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa)
@@ -48,50 +58,54 @@ bool keyboardHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionA
 		switch (ea.getKey())
 		{
 		case 'w':
-			distance = distance - transInc;
+			centerDistance = centerDistance - transInc;
 			break;
 
 		case 'W':
-			distance2 = distance2 - transInc;
+			sideDistance = sideDistance - transInc;
 			break;
 
 
 		case 's':
-			distance = distance + transInc;
+			centerDistance = centerDistance + transInc;
 			break;
 
 		case 'S':
-			distance2 = distance2 + transInc;
+			sideDistance = sideDistance + transInc;
 			break;
 
 		case 'a':
-			cull = cull - transInc;
+			centerCull = centerCull - transInc;
 			break;
 
 		case'A':
-			cull2 = cull2 - transInc;
+			sideCull = sideCull - transInc;
 			break;
 
 		case 'd':
-			cull = cull + transInc;
+			centerCull = centerCull + transInc;
 			break;
 
 		case'D':
-			cull2 = cull2 + transInc;
+			sideCull = sideCull + transInc;
 			break;
 
 		case ' ':
-			distance = loadedDistance;
-			cull = loadedCull;
-			distance2 = loadedDistance2;
-			cull2 = loadedCull2;
+			centerDistance = loadedCenterDistance;
+			centerCull = loadedCenterCull;
+			sideDistance=  loadedSideDistance;
+			sideCull = loadedSideCull;
+			sideVPOffset = loadedSideVPOffset;
+			centerVPOffset = loadedCenterVPOffset;
 			break;
 
 		case '.':
-			distance = defaultDistance;
-			cull = defaultCull;
-			distance2 = defaultDistance;
-			cull2 = defaultCull;
+			centerDistance = defaultDistance;
+			centerCull = defaultCull;
+			sideDistance = defaultDistance;
+			sideCull = defaultCull;
+			sideVPOffset = 0;
+			centerVPOffset = 0;
 			break;
 
 		case '+':
@@ -105,6 +119,23 @@ bool keyboardHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionA
 		case 'p':
 			printInfo();
 			break;
+
+		case 'q':
+			centerVPOffset++;
+			break;
+
+		case 'e':
+			centerVPOffset--;
+			break;
+
+		case 'Q':
+			sideVPOffset++;
+			break;
+
+		case 'E':
+			sideVPOffset--;
+			break;
+
 
 		default:
 			return false;
@@ -161,10 +192,12 @@ osg::ref_ptr<osg::Geode> createShapes()
 void printInfo()
 {
 	printf("**********\n");
-	printf("Distance: %f\n", distance);
-	printf("Cull Amount: %f\n", cull);
-	printf("Distance2: %f\n", distance2);
-	printf("Cull2 Amount: %f\n", cull2);
+	printf("Center Distance: %f\n", centerDistance);
+	printf("Center Cull Amount: %f\n", centerCull);
+	printf("Center Viewport Offset: %i\n", centerVPOffset);
+	printf("Side Distance: %f\n", sideDistance);
+	printf("Side Cull Amount: %f\n", sideCull);
+	printf("Side Viewport Offset: %i\n", sideVPOffset);
 	printf("**********\n\n");
 }
 
@@ -172,10 +205,13 @@ void printInfo()
 void writeInfo()
 {
 	FILE * file = fopen(displayFile, "w");
-	fprintf(file, "%f\n", distance);
-	fprintf(file, "%f\n", cull);
-	fprintf(file, "%f\n", distance2);
-	fprintf(file, "%f\n", cull2);
+	fprintf(file, "%f\n", centerDistance);
+	fprintf(file, "%f\n", centerCull);
+	fprintf(file, "%i\n", centerVPOffset);
+	fprintf(file, "%f\n", sideDistance);
+	fprintf(file, "%f\n", sideCull);
+	fprintf(file, "%i\n", sideVPOffset);
+
 	fclose(file);
 }
 
@@ -185,23 +221,29 @@ void setStartingViews()
 
 	if (file.is_open())
 	{
-		file >> loadedDistance;
-		file >> loadedCull;
-		file >> loadedDistance2;
-		file >> loadedCull2;
-		distance = loadedDistance;
-		cull = loadedCull;
-		distance2 = loadedDistance2;
-		cull2 = loadedCull2;
+		file >> loadedCenterDistance;
+		file >> loadedCenterCull;
+		file >> loadedCenterVPOffset;
+		file >> loadedSideDistance;
+		file >> loadedSideCull;
+		file >> loadedSideVPOffset;
+		centerDistance = loadedCenterDistance;
+		centerCull = loadedCenterCull;
+		centerVPOffset = loadedCenterVPOffset;
+		sideDistance = loadedSideDistance;
+		sideCull = loadedSideCull;
+		sideVPOffset = loadedSideVPOffset;
 		file.close();
 	}
 
 	else
 	{
-		distance = defaultDistance;
-		cull = defaultCull;
-		distance2 = defaultDistance;
-		cull2 = defaultCull;
+		centerDistance = defaultDistance;
+		centerCull = defaultCull;
+		centerVPOffset = 0;
+		sideDistance = defaultDistance;
+		sideCull = defaultCull;
+		sideVPOffset = 0;
 	}
 }
 
@@ -228,8 +270,8 @@ void setup()
 
 	osg::ref_ptr<osg::Camera> centerCam = new osg::Camera;
 	osg::ref_ptr<osg::GraphicsContext::Traits> centerTraits = new osg::GraphicsContext::Traits;
-	centerTraits->x = xoffset + viewWidth2;
-	centerTraits->y = yoffset;
+	centerTraits->x = xOffset + viewWidth;
+	centerTraits->y = yOffset;
 	centerTraits->width = viewWidth;
 	centerTraits->height = viewHeight;
 	centerTraits->windowDecoration = false;
@@ -241,14 +283,11 @@ void setup()
 	centerCam->setViewport(centerVP);
 	viewer.addSlave(centerCam);
 
-
-
-
 	osg::ref_ptr<osg::Camera> leftCam = new osg::Camera;
 	osg::ref_ptr<osg::GraphicsContext::Traits> leftTraits = new osg::GraphicsContext::Traits;
-	leftTraits->x = xoffset;
-	leftTraits->y = yoffset;
-	leftTraits->width = viewWidth2;
+	leftTraits->x = xOffset;
+	leftTraits->y = yOffset;
+	leftTraits->width = viewWidth;
 	leftTraits->height = viewHeight;
 	leftTraits->windowDecoration = false;
 	leftTraits->doubleBuffer = true;
@@ -262,9 +301,9 @@ void setup()
 
 	osg::ref_ptr<osg::Camera> rightCam = new osg::Camera;
 	osg::ref_ptr<osg::GraphicsContext::Traits> rightTraits = new osg::GraphicsContext::Traits;
-	rightTraits->x = xoffset + viewWidth + viewWidth2;
-	rightTraits->y = yoffset;
-	rightTraits->width = viewWidth2;
+	rightTraits->x = xOffset + viewWidth * 2;
+	rightTraits->y = yOffset;
+	rightTraits->width = viewWidth;
 	rightTraits->height = viewHeight;
 	rightTraits->windowDecoration = false;
 	rightTraits->doubleBuffer = true;
@@ -274,18 +313,6 @@ void setup()
 	osg::ref_ptr<osg::Viewport> rightVP = new osg::Viewport(0, 0, rightTraits->width, rightTraits->height);
 	rightCam->setViewport(rightVP);
 	viewer.addSlave(rightCam);
-
-	
-
-	/*
-	osg::Matrixd viewMatrix = osg::Camera->getViewMatrix(); osg::Matrixd projMatrix = osgcamera->getProjectionMatrix(); GLint viewport[4];
-	viewport[0] = osgcamera->getViewport()->x();
-	viewport[1] = osgcamera->getViewport()->y();
-	viewport[2] = osgcamera->getViewport()->width();
-	viewport[3] = osgcamera->getViewport()->height();
-	then you might pass viewMatrix.ptr()projMatrix.ptr()viewport to gluUnProject function*/
-		
-	
 }
 
 void run()
@@ -297,23 +324,23 @@ void run()
 	osg::Matrix leftCombined = leftRotation*reflection;
 	osg::Matrix rightCombined = rightRotation*reflection;
 
-	osg::Vec3d center = osg::Vec3d(camHorLoc, depth, camVertLoc);
 		
 	while (!viewer.done())
 	{
-		viewer.getSlave(0)._viewOffset = osg::Matrixd::lookAt(osg::Vec3d(camHorLoc, distance, camVertLoc), osg::Vec3d(camHorLoc, depth, camVertLoc), osg::Vec3d(0, 0, 1));
-		viewer.getSlave(0)._projectionOffset = osg::Matrixd::perspective(40.0, viewWidth / viewHeight, distance - radius, distance - cull);
+		viewer.getSlave(0)._camera->setViewport(centerVPOffset, 0, viewWidth, viewHeight);
+		viewer.getSlave(0)._viewOffset = osg::Matrixd::lookAt(osg::Vec3d(camHorLoc, centerDistance, camVertLoc), osg::Vec3d(camHorLoc, depth, camVertLoc), osg::Vec3d(0, 0, 1));
+		viewer.getSlave(0)._projectionOffset = osg::Matrixd::perspective(40.0, 1280.0/4800.0, centerDistance - radius, centerDistance - centerCull);
 
-		viewer.getSlave(1)._viewOffset = leftCombined*osg::Matrixd::lookAt(osg::Vec3d(camHorLoc, distance2, camVertLoc), osg::Vec3d(camHorLoc, depth, camVertLoc), osg::Vec3d(0, 0, 1));
-		viewer.getSlave(1)._projectionOffset = osg::Matrixd::perspective(40.0, viewWidth2 / viewHeight, distance2 - radius, distance2 - cull2);
+		viewer.getSlave(1)._camera->setViewport(-sideVPOffset, 0, viewWidth, viewHeight);
+		viewer.getSlave(1)._viewOffset = leftCombined*osg::Matrixd::lookAt(osg::Vec3d(camHorLoc, sideDistance, camVertLoc), osg::Vec3d(camHorLoc, depth, camVertLoc), osg::Vec3d(0, 0, 1));
+		viewer.getSlave(1)._projectionOffset = osg::Matrixd::perspective(40.0, 1280.0 / 4800.0, sideDistance - radius, sideDistance - sideCull);
 
-		viewer.getSlave(2)._viewOffset = rightCombined*osg::Matrixd::lookAt(osg::Vec3d(camHorLoc, distance2, camVertLoc), osg::Vec3d(camHorLoc, depth, camVertLoc), osg::Vec3d(0, 0, 1));
-		viewer.getSlave(2)._projectionOffset = osg::Matrixd::perspective(40.0, viewWidth2 / viewHeight, distance2 - radius, distance2 - cull2);
+		viewer.getSlave(2)._camera->setViewport(sideVPOffset, 0, viewWidth, viewHeight);
+		viewer.getSlave(2)._viewOffset = rightCombined*osg::Matrixd::lookAt(osg::Vec3d(camHorLoc, sideDistance, camVertLoc), osg::Vec3d(camHorLoc, depth, camVertLoc), osg::Vec3d(0, 0, 1));
+		viewer.getSlave(2)._projectionOffset = osg::Matrixd::perspective(40.0, 1280.0 / 4800.0, sideDistance - radius, sideDistance - sideCull);
 
 		viewer.frame();
 	}
-
-	
 
 	printInfo();
 	writeInfo();

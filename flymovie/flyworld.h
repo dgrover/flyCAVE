@@ -20,9 +20,9 @@ private:
 	double xOffset;
 	double yOffset;
 	double radius;
-	double distance, depth;
+	double sideDistance, centerDistance, depth;
 	double camHorLoc, camVertLoc;
-	double cull;
+	double sideCull, centerCull, sideVPOffset, centerVPOffset;
 
 	osg::ref_ptr<osgViewer::Viewer> viewer;
 	
@@ -44,8 +44,8 @@ public:
 	osg::ref_ptr<osgViewer::Viewer> getViewer();
 	
 	FlyWorld(char *imgFile, char *sequence, char *settings, double w, double h, double x, double r) :
-		imageFileName(imgFile), sequenceFile(sequence), displayFile(settings), viewWidth(w), viewHeight(h), xOffset(x), yOffset(0), radius(r), distance(r+10.0),
-		camHorLoc(0), camVertLoc(r*-1.0), cull(0), depth(0)
+		imageFileName(imgFile), sequenceFile(sequence), displayFile(settings), viewWidth(w), viewHeight(h), xOffset(x), yOffset(0), radius(r), sideDistance(r + 10.0), centerDistance(r+10.0),
+		camHorLoc(0), camVertLoc(r*-1.0), sideCull(0), centerCull(0), depth(0), sideVPOffset(0), centerVPOffset(0)
 	{
 		viewer = new osgViewer::Viewer();
 		setup();
