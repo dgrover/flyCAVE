@@ -16,9 +16,7 @@ struct {
 bool stream = true;
 bool track = false;
 bool record = false;
-
-queue <Mat> dispStream;
-queue <Mat> maskStream;
+bool laser = false;
 
 queue <Image> imageStream;
 queue <TimeStamp> timeStamps;
@@ -47,13 +45,30 @@ float angleBetween(Point v1, Point v2, Point c)
 		return acos(a) * 180 / CV_PI;
 }
 
+int ConvertTimeToFPS(int ctime, int ltime)
+{
+	int dtime;
+
+	if (ctime < ltime)
+		dtime = ctime + (8000 - ltime);
+	else
+		dtime = ctime - ltime;
+
+	if (dtime > 0)
+		dtime = 8000 / dtime;
+	else
+		dtime = 0;
+
+	return dtime;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	
-	FlyWorld vr("stripe.bmp", "displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
+	FlyWorld vr("images\\stripe.bmp", "displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
 	osg::ref_ptr<osgViewer::Viewer> viewer=vr.getViewer();
 
-	int imageWidth = 256, imageHeight = 256;
+	int imageWidth = 320, imageHeight = 320;
 
 	PGRcam wingcam;
 
@@ -63,13 +78,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	FlyCapture2::Error error;
 
-	//FmfReader fin;
 	FmfWriter fout;
-
-	//fin.Open(argv[1]);
-	//fin.ReadHeader();
-	//fin.GetImageSize(imageWidth, imageHeight);
-	//nframes = fin.GetFrameCount();	
 
 	error = busMgr.GetNumOfCameras(&numCameras);
 	//printf("Number of cameras detected: %u\n", numCameras);
@@ -86,7 +95,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	error = wingcam.Connect(guid);
 	error = wingcam.SetCameraParameters(imageWidth, imageHeight);
 	//wingcam.GetImageSize(imageWidth, imageHeight);
-	error = wingcam.SetProperty(SHUTTER, 4.925);
+	error = wingcam.SetProperty(SHUTTER, 4.887);
 	error = wingcam.SetProperty(GAIN, 0.0);
 	error = wingcam.Start();
 
@@ -98,24 +107,30 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("[OK]\n");
 
+	Serial* SP = new Serial("COM4");    // adjust as needed
+
+	if (SP->IsConnected())
+		printf("Connecting arduino [OK]\n");
+
 	FlyCapture2::Image img;
 	FlyCapture2::TimeStamp stamp;
 
 	Mat frame, mask, fly_blob, body_mask;
 
-	int thresh = 190;
+	Mat dispStream, maskStream;
+
+	int thresh = 200;
 	int body_thresh = 150;
 
-	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
-	Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+	Mat element = getStructuringElement(MORPH_RECT, Size(3, 3), Point(1, 1));
 
 	Point2f center(imageWidth / 2, imageHeight / 2);
-	int key_state = 0;
+	int record_key_state = 0;
+	int laser_key_state = 0;
 
 	float left_angle, right_angle;
 	int count = 0;
 
-	printf("Press [F1] to start/stop recording. Press [ESC] to exit.\n\n");
 
 	#pragma omp parallel sections num_threads(4)
 	{
@@ -143,8 +158,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		#pragma omp section
 		{
 			int ltime = 0;
-			int ctime = 0;
-			int dtime = 0;
+			int fps = 0;
 
 			while (true)
 			{
@@ -157,7 +171,8 @@ int _tmain(int argc, _TCHAR* argv[])
 				threshold(frame, body_mask, body_thresh, 255, THRESH_BINARY_INV);
 				threshold(frame, mask, thresh, 255, THRESH_BINARY_INV);
 
-				dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 3);
+				dilate(body_mask, body_mask, element, Point(-1, -1), 3);
+				//dilate(body_mask, body_mask, dilateElement, Point(-1, -1), 3);
 				body_mask = Scalar::all(255) - body_mask;
 
 				mask &= body_mask;
@@ -167,8 +182,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 				if (track)
 				{
-					erode(mask, mask, erodeElement, Point(-1, -1), 3);
-					dilate(mask, mask, dilateElement, Point(-1, -1), 3);
+					morphologyEx(mask, mask, MORPH_OPEN, element, Point(-1, -1), 2);
+
+					//erode(mask, mask, erodeElement, Point(-1, -1), 3);
+					//dilate(mask, mask, dilateElement, Point(-1, -1), 3);
 
 					// Find contours
 					vector<vector<Point>> contours;
@@ -183,6 +200,7 @@ int _tmain(int argc, _TCHAR* argv[])
 							convexHull(Mat(contours[i]), hull[i], false);
 
 							drawContours(frame, contours, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
+							drawContours(mask, contours, i, Scalar::all(255), FILLED, 1);
 							drawContours(frame, hull, i, Scalar::all(255), 1, 8, vector<Vec4i>(), 0, Point());
 
 							std::sort(hull[i].begin(), hull[i].end(), mycomp);
@@ -195,40 +213,24 @@ int _tmain(int argc, _TCHAR* argv[])
 							else
 								right_angle = angleBetween(hull[i].front(), hull[i].back(), center);
 
-							//if (hull[i].front().x < center.x)
-							//	left_angle = angleBetween(hull[i].front(), Point2f(imageWidth / 2, 0), center);
-							//else
-							//	right_angle = angleBetween(hull[i].front(), Point2f(imageWidth / 2, 0), center);
 						}
 					}
 				}
 
-				ctime = stamp.cycleCount;
+				fps = ConvertTimeToFPS(stamp.cycleCount, ltime);
+				ltime = stamp.cycleCount;
 
-				if (ctime < ltime)
-					dtime = ctime + (8000 - ltime);
-				else
-					dtime = ctime - ltime;
-
-				if (dtime > 0)
-					dtime = 8000 / dtime;
-				else
-					dtime = 0;
-
-				ltime = ctime;
-
-				putText(frame, to_string(dtime), Point(225, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+				putText(frame, to_string(fps), Point(imageWidth - 50, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
 				if (record)
 					putText(frame, to_string(count++), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
 				#pragma omp critical
 				{
-					maskStream.push(mask);
-					dispStream.push(frame);
+					maskStream = mask.clone();
+					dispStream = frame.clone();
 
 					wbd.push(left_angle - right_angle);
-
 					if (record)
 					{
 						leftwba.push(left_angle);
@@ -241,16 +243,36 @@ int _tmain(int argc, _TCHAR* argv[])
 
 				if (GetAsyncKeyState(VK_F1))
 				{
-					if (!key_state)
+					if (!record_key_state)
 					{
 						record = !record;
 						count = 0;
 					}
 
-					key_state = 1;
+					record_key_state = 1;
 				}
 				else
-					key_state = 0;
+					record_key_state = 0;
+
+
+				if (GetAsyncKeyState(VK_F2))
+				{
+					if (!laser_key_state)
+					{
+						laser = !laser;
+
+						if (laser)
+							SP->WriteData("1", 1);
+						else
+							SP->WriteData("0", 1);
+					}
+
+					laser_key_state = 1;
+
+				}
+				else
+					laser_key_state = 0;
+
 
 				if (GetAsyncKeyState(VK_RETURN))
 					track = true;
@@ -274,6 +296,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		#pragma omp section
 		{
+			Image timage;
+			TimeStamp tstamp;
+			float tleft, tright;
+
 			while (true)
 			{
 				if (!imageStream.empty())
@@ -286,18 +312,24 @@ int _tmain(int argc, _TCHAR* argv[])
 						printf("Recording ");
 					}
 
-					fout.WriteFrame(timeStamps.front(), imageStream.front());
-					fout.WriteLog(timeStamps.front());
-					fout.WriteWBA(leftwba.front(), rightwba.front());
-					fout.nframes++;
-
 					#pragma omp critical
 					{
+						timage = imageStream.front();
+						tstamp = timeStamps.front();
+						tleft = leftwba.front();
+						tright = rightwba.front();
+
 						imageStream.pop();
 						timeStamps.pop();
 						leftwba.pop();
 						rightwba.pop();
 					}
+
+					fout.WriteFrame(timage);
+					fout.WriteLog(tstamp);
+					fout.WriteWBA(tleft, tright);
+					fout.nframes++;
+
 				}
 				else
 				{
@@ -329,22 +361,27 @@ int _tmain(int argc, _TCHAR* argv[])
 			createTrackbar("thresh", "controls", &thresh, 255);
 			createTrackbar("body thresh", "controls", &body_thresh, 255);
 
+			Mat tframe, tmask;
+
 			while (true)
 			{
-				if (!dispStream.empty())
+
+				#pragma omp critical
 				{
-					line(dispStream.back(), Point((imageWidth / 2) - 10, imageHeight / 2), Point((imageWidth / 2) + 10, imageHeight / 2), 255);  //crosshair horizontal
-					line(dispStream.back(), Point(imageWidth / 2, (imageHeight / 2) - 10), Point(imageWidth / 2, (imageHeight / 2) + 10), 255);  //crosshair vertical
-
-					imshow("image", dispStream.back());
-					imshow("mask", maskStream.back());
-
-					#pragma omp critical
-					{
-						dispStream = queue<Mat>();
-						maskStream = queue<Mat>();
-					}
+					tframe = dispStream.clone();
+					tmask = maskStream.clone();
 				}
+
+				if (!tframe.empty())
+				{
+					line(tframe, Point((imageWidth / 2) - 10, imageHeight / 2), Point((imageWidth / 2) + 10, imageHeight / 2), 255);  //crosshair horizontal
+					line(tframe, Point(imageWidth / 2, (imageHeight / 2) - 10), Point(imageWidth / 2, (imageHeight / 2) + 10), 255);  //crosshair vertical
+
+					imshow("image", tframe);
+				}
+
+				if (!tmask.empty())
+					imshow("mask", tmask);
 
 				waitKey(1);
 
@@ -356,11 +393,13 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 			}
 		}
-
 	}
 
 	//fin.Close();
 	wingcam.Stop();
+
+	if (SP->IsConnected())
+		SP->WriteData("0", 1);
 
 	return 0;
 }

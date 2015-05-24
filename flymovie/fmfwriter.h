@@ -27,7 +27,8 @@ class FmfWriter
 
 		void InitHeader(unsigned __int32 x, unsigned __int32 y);
 		void WriteHeader();
-		void WriteFrame(FlyCapture2::TimeStamp st, FlyCapture2::Image img);
+		//void WriteFrame(FlyCapture2::TimeStamp st, FlyCapture2::Image img);
+		void WriteFrame(FlyCapture2::Image img);
 		void WriteLog(FlyCapture2::TimeStamp st);
 		void WriteWBA(float left, float right);
 		int IsOpen();

@@ -147,6 +147,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="arduino.h" />
     <ClInclude Include="flyworld.h" />
     <ClInclude Include="fmfreader.h" />
     <ClInclude Include="fmfwriter.h" />
@@ -155,6 +156,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="arduino.cpp" />
     <ClCompile Include="flymovie.cpp" />
     <ClCompile Include="flyworld.cpp" />
     <ClCompile Include="fmfreader.cpp" />

@@ -9,6 +9,7 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <tchar.h>
 #include <vector>
 
@@ -25,6 +26,8 @@
 #include "fmfwriter.h"
 #include "pgrcam.h"
 #include "flyworld.h"
+#include "arduino.h"
+
 
 
 
