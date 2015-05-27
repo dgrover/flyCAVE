@@ -93,6 +93,7 @@ void FlyWorld::setup()
 	viewer->getCamera()->setCullingMode(osg::CullSettings::ENABLE_ALL_CULLING);
 	viewer->getCamera()->setClearColor(osg::Vec4(0, 0, 0, 1)); // black background
 	viewer->getCamera()->setProjectionMatrix(osg::Matrixd::identity());
+	viewer->getCamera()->setViewMatrix(osg::Matrixd::rotate(osg::DegreesToRadians(-90.0f), osg::Vec3f(0.0f, 0.0f, 0.1f)));
 	viewer->setCameraManipulator(NULL);
 
 	osg::ref_ptr<osg::Camera> centerCam = new osg::Camera;
