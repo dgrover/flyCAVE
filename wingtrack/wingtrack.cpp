@@ -63,7 +63,7 @@ int ConvertTimeToFPS(int ctime, int ltime)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	int imageWidth = 320, imageHeight = 320;
+	int imageWidth = 256, imageHeight = 256;
 
 	PGRcam wingcam;
 
