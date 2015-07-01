@@ -27,6 +27,7 @@ double depth = 0;
 
 int loadedSideVPOffset = 0;
 int loadedCenterVPOffset = 0;
+
 int sideVPOffset = 0;
 int centerVPOffset = 0;
 
@@ -135,7 +136,6 @@ bool keyboardHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionA
 		case 'E':
 			sideVPOffset--;
 			break;
-
 
 		default:
 			return false;

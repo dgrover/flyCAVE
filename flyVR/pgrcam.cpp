@@ -91,13 +91,13 @@ FlyCapture2::Error PGRcam::SetProperty(FlyCapture2::PropertyType type, float abs
 	return error;
 }
 
-FlyCapture2::Error PGRcam::Start()
-{
-	// Start capturing images
-	error = cam.StartCapture();
-
-	return error;
-}
+//FlyCapture2::Error PGRcam::Start()
+//{
+//	// Start capturing images
+//	error = cam.StartCapture();
+//
+//	return error;
+//}
 
 FlyCapture2::Error PGRcam::Stop()
 {

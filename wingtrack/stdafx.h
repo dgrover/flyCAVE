@@ -27,4 +27,6 @@
 #include "pgrcam.h"
 #include "arduino.h"
 
+#include "readerwriterqueue.h"
+
 // TODO: reference additional headers your program requires here
