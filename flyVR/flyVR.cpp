@@ -26,7 +26,7 @@ ReaderWriterQueue<Mat> disp_frame(1), disp_mask(1);
 
 ReaderWriterQueue<float> leftwba;
 ReaderWriterQueue<float> rightwba;
-ReaderWriterQueue<float> wbd;
+ReaderWriterQueue<float> wbd(1);
 
 int last = 0, fps = 0;
 
@@ -244,7 +244,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						count++;
 					}
 
-					wbd.enqueue(left_angle - right_angle);
+					wbd.try_enqueue(left_angle - right_angle);
 					disp_frame.try_enqueue(frame.clone());
 					disp_mask.try_enqueue(mask.clone());
 

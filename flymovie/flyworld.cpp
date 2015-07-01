@@ -125,6 +125,7 @@ void FlyWorld::setSequence()
 
 void FlyWorld::setup()
 {
+	osg::setNotifyLevel(osg::NotifySeverity::ALWAYS);
 	osg::ref_ptr<osg::Group> root = new osg::Group;
 	root->addChild(createShapes());
 	setSequence();
