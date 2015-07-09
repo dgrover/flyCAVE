@@ -126,11 +126,21 @@ void FlyWorld::setSequence()
 void FlyWorld::setup()
 {
 	osg::setNotifyLevel(osg::NotifySeverity::ALWAYS);
+	
+	sphereNode = createShapes();
+	
 	osg::ref_ptr<osg::Group> root = new osg::Group;
-	root->addChild(createShapes());
+	//root->addChild(createShapes());
+	root->addChild(sphereNode.get());
+	
+	setVisible(false);
+
 	setSequence();
 	viewer->setSceneData(root);
 	setView();
+
+	//keyboardHandler* handler = new keyboardHandler();
+	//viewer->addEventHandler(handler);
 
 	osg::Matrix reflection = osg::Matrixd::scale(-1, 1, 1);
 	osg::Matrix leftRotation = osg::Matrixd::rotate(osg::DegreesToRadians(90.0), osg::Vec3(0, 0, 1));
@@ -207,4 +217,9 @@ void FlyWorld::setup()
 osg::ref_ptr<osgViewer::Viewer> FlyWorld::getViewer()
 {
 	return viewer;
+}
+
+void FlyWorld::setVisible(bool v)
+{
+	sphereNode->setNodeMask(v ? 0xffffffff : 0x0);
 }

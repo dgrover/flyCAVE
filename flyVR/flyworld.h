@@ -43,7 +43,9 @@ private:
 public:
 
 	double angle;
+	osg::ref_ptr<osg::Geode> sphereNode;
 	osg::ref_ptr<osgViewer::Viewer> getViewer();
+	void setVisible(bool v);
 
 	FlyWorld(char *imgFile, char *settings, double w, double h, double x, double r) :
 		imageFileName(imgFile), displayFile(settings), viewWidth(w), viewHeight(h), xOffset(x), yOffset(0), radius(r), sideDistance(r + 10.0), centerDistance(r + 10.0),

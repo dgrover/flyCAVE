@@ -29,7 +29,7 @@ private:
 	const char* imageFileName;
 	const char* sequenceFile;
 	const char* displayFile;
-	
+
 	osg::ref_ptr<osg::Geode> createShapes();
 	void setView();
 	void setSequence();
@@ -37,11 +37,13 @@ private:
 
 public:
 
+	osg::ref_ptr<osg::Geode> sphereNode;
 	osg::ref_ptr<osg::ImageSequence> imageSequence;
 	std::vector<int> sequence;
 	unsigned int numImages;
 
 	osg::ref_ptr<osgViewer::Viewer> getViewer();
+	void setVisible(bool v);
 	
 	FlyWorld(char *imgFile, char *sequence, char *settings, double w, double h, double x, double r) :
 		imageFileName(imgFile), sequenceFile(sequence), displayFile(settings), viewWidth(w), viewHeight(h), xOffset(x), yOffset(0), radius(r), sideDistance(r + 10.0), centerDistance(r+10.0),

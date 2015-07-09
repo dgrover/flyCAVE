@@ -82,13 +82,15 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	FlyWorld mov("images", "sequence.txt", "displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
+	FlyWorld mov("..//..//flymetrics//flymovie_patterns//stripe35_images", "..//..//flymetrics//flymovie_patterns//sequence.txt", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
 	osg::ref_ptr<osgViewer::Viewer> viewer = mov.getViewer();
 
 	printf("%d images read [OK]\n", mov.numImages);
 
+	//mov.imageSequence->seek(0.0);
+	//viewer->frame();
 
-	int imageWidth = 256, imageHeight = 256;
+	int imageWidth = 320, imageHeight = 320;
 
 	PGRcam wingcam;
 
@@ -155,15 +157,17 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			while (true)
 			{
-				for (int i = 0; i < mov.numImages; i++)
+				for (int i = 1; i < mov.numImages; i++)
 				{
-					for (int j = 0; j < mov.sequence[i]; j++)
-					{
+					//for (int j = 0; j < mov.sequence[i]; j++)
+					//{
 						mov.imageSequence->seek(((double)i) / ((double)(mov.numImages - 1)));
 						viewer->frame();
-					}
-				}
+						Sleep(8);
 
+					//}
+				}
+				
 				if (!stream)
 					break;
 			}
@@ -346,6 +350,8 @@ int _tmain(int argc, _TCHAR* argv[])
 					{
 						record = !record;
 						count = 0;
+
+						mov.setVisible(record);
 					}
 
 					record_key_state = 1;
@@ -384,6 +390,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					{
 						count = 0;
 						record = false;
+						mov.setVisible(false);
 					}
 				}
 			}

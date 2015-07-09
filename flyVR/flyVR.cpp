@@ -81,12 +81,17 @@ float angleBetween(Point v1, Point v2, Point c)
 		return acos(a) * 180 / CV_PI;
 }
 
+int sign(int v)
+{
+	return v > 0 ? 1 : -1;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
-	FlyWorld vr("images\\stripe.bmp", "displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
+	FlyWorld vr("images//stripe.bmp", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
 	osg::ref_ptr<osgViewer::Viewer> viewer = vr.getViewer();
 
-	int imageWidth = 256, imageHeight = 256;
+	int imageWidth = 320, imageHeight = 320;
 
 	PGRcam wingcam;
 
@@ -157,7 +162,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			{
 				if (wbd.try_dequeue(wba))
 				{
-					vr.angle += wba;
+					vr.angle -= sign(wba);
 					viewer->frame();
 				}
 
@@ -332,6 +337,8 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					if (!track_key_state)
 						track = !track;
+
+					vr.setVisible(track);
 
 					track_key_state = 1;
 				}

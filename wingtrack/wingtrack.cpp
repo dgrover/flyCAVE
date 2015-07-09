@@ -81,7 +81,7 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	int imageWidth = 256, imageHeight = 256;
+	int imageWidth = 320, imageHeight = 320;
 
 	PGRcam wingcam;
 

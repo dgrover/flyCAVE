@@ -74,8 +74,15 @@ void FlyWorld::setView()
 void FlyWorld::setup()
 {
 	osg::setNotifyLevel(osg::NotifySeverity::ALWAYS);
+	
+	sphereNode = createShapes();
+	
 	osg::ref_ptr<osg::Group> root = new osg::Group;
-	root->addChild(createShapes());
+	//root->addChild(createShapes());
+	root->addChild(sphereNode.get());
+
+	setVisible(false);
+	
 	viewer->setSceneData(root);
 	setView();
 
@@ -155,4 +162,9 @@ void FlyWorld::setup()
 osg::ref_ptr<osgViewer::Viewer> FlyWorld::getViewer()
 {
 	return viewer;
+}
+
+void FlyWorld::setVisible(bool v)
+{
+	sphereNode->setNodeMask(v ? 0xffffffff : 0x0);
 }
