@@ -19,6 +19,7 @@ bool stream = true;
 bool track = false;
 bool record = false;
 bool laser = false;
+bool loop = true;
 
 ReaderWriterQueue<Image> q(200);
 ReaderWriterQueue<Image> rec(200);
@@ -55,7 +56,9 @@ void OnImageGrabbed(Image* pImage, const void* pCallbackData)
 	last = pImage->GetTimeStamp().cycleCount;
 
 	img.DeepCopy(pImage);
-	q.enqueue(img);
+	
+	if (stream)
+		q.enqueue(img);
 
 	return;
 }
@@ -82,13 +85,8 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	FlyWorld mov("..//..//flymetrics//flymovie_patterns//stripe35_images", "..//..//flymetrics//flymovie_patterns//sequence.txt", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
-	osg::ref_ptr<osgViewer::Viewer> viewer = mov.getViewer();
-
+	FlyWorld mov("images", "sequence.txt", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
 	printf("%d images read [OK]\n", mov.numImages);
-
-	//mov.imageSequence->seek(0.0);
-	//viewer->frame();
 
 	int imageWidth = 320, imageHeight = 320;
 
@@ -155,17 +153,43 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		#pragma omp section
 		{
+			//double elap_time;
+
+			osg::ref_ptr<osgViewer::Viewer> viewer = mov.getViewer();
+
+			mov.setVisible(false);
+			mov.imageSequence->seek(0.0);
+			viewer->frame();
+
 			while (true)
 			{
-				for (int i = 1; i < mov.numImages; i++)
+				if (record)
 				{
-					//for (int j = 0; j < mov.sequence[i]; j++)
-					//{
-						mov.imageSequence->seek(((double)i) / ((double)(mov.numImages - 1)));
-						viewer->frame();
-						Sleep(8);
+					for (int i = 1; i < mov.numImages; i++)
+					{
+						for (int j = 0; j < mov.sequence[i]; j++)
+						{
+							//osg::Timer_t startTick = osg::Timer::instance()->tick();
 
-					//}
+							mov.imageSequence->seek(((double)i) / ((double)(mov.numImages - 1)));
+							viewer->frame();
+
+							//osg::Timer_t endTick = osg::Timer::instance()->tick();
+							//elap_time = osg::Timer::instance()->delta_m(startTick, endTick);
+
+							//printf("%f\n", elap_time);
+
+						}
+					}
+
+					if (!loop)
+					{
+						record = false;
+						mov.setVisible(false);
+						mov.imageSequence->seek(0.0);
+						viewer->frame();
+					}
+
 				}
 				
 				if (!stream)
@@ -384,15 +408,18 @@ int _tmain(int argc, _TCHAR* argv[])
 					break;
 				}
 
-				if (record)
+				if (record && loop)
 				{
 					if (count == MAXRECFRAMES)
 					{
 						count = 0;
+
 						record = false;
 						mov.setVisible(false);
 					}
 				}
+
+
 			}
 		}
 	}

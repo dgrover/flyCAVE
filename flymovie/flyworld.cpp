@@ -155,7 +155,9 @@ void FlyWorld::setup()
 	viewer->getCamera()->setReadBuffer(buffer);
 	viewer->getCamera()->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 	viewer->getCamera()->setCullingMode(osg::CullSettings::ENABLE_ALL_CULLING);
+	
 	viewer->getCamera()->setClearColor(osg::Vec4(0, 0, 0, 1)); // black background
+	
 	viewer->getCamera()->setProjectionMatrix(osg::Matrixd::identity());
 	viewer->setCameraManipulator(NULL);
 
