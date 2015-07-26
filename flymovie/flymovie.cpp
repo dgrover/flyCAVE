@@ -157,8 +157,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			osg::ref_ptr<osgViewer::Viewer> viewer = mov.getViewer();
 
-			viewer->setRunFrameScheme(osgViewer::ViewerBase::ON_DEMAND);
-			viewer->setThreadingModel(osgViewer::ViewerBase::CullDrawThreadPerContext);
+			//viewer->setRunFrameScheme(osgViewer::ViewerBase::ON_DEMAND);
+			//viewer->setThreadingModel(osgViewer::ViewerBase::CullDrawThreadPerContext);
 			
 			mov.setVisible(false);
 			mov.imageSequence->seek(0.0);
