@@ -10,6 +10,7 @@ using namespace cv;
 using namespace moodycamel;
 
 #define MAXRECFRAMES 1000
+#define N 1
 
 struct {
 	bool operator() (cv::Point pt1, cv::Point pt2) { return (pt1.y < pt2.y); }
@@ -85,7 +86,9 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	FlyWorld mov("images", "sequence.txt", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
+	//FlyWorld mov("images", "sequence.txt", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
+	
+	FlyWorld mov("images", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
 	printf("%d images read [OK]\n", mov.numImages);
 
 	int imageWidth = 320, imageHeight = 320;
@@ -170,7 +173,8 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					for (int i = 1; i < mov.numImages; i++)
 					{
-						for (int j = 0; j < mov.sequence[i]; j++)
+						//for (int j = 0; j < mov.sequence[i]; j++)
+						for (int j = 0; j < N; j++)
 						{
 							//osg::Timer_t startTick = osg::Timer::instance()->tick();
 

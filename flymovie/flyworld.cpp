@@ -104,24 +104,24 @@ void FlyWorld::setView()
 	}
 }
 
-void FlyWorld::setSequence()
-{
-	double number;
-	std::ifstream file(sequenceFile, std::ios::in);
-
-	if (file.is_open())
-	{
-		while (file >> number)
-			sequence.push_back(number);
-
-		file.close();
-	}
-	else
-	{
-		for (int i = 0; i < numImages; i++)
-			sequence.push_back(1);
-	}
-}
+//void FlyWorld::setSequence()
+//{
+//	double number;
+//	std::ifstream file(sequenceFile, std::ios::in);
+//
+//	if (file.is_open())
+//	{
+//		while (file >> number)
+//			sequence.push_back(number);
+//
+//		file.close();
+//	}
+//	else
+//	{
+//		for (int i = 0; i < numImages; i++)
+//			sequence.push_back(1);
+//	}
+//}
 
 void FlyWorld::setup()
 {
@@ -135,7 +135,7 @@ void FlyWorld::setup()
 
 	setVisible(false);
 
-	setSequence();
+	//setSequence();
 	viewer->setSceneData(root);
 	setView();
 
