@@ -4,17 +4,21 @@
 class FmfWriter
 {
 	private:
-		FILE *fp;
-		FILE *flog;
-		FILE *fwba;
+		//FILE *fp;
+		//FILE *flog;
+		//FILE *fwba;
 
-		char fname[100];
-		char flogname[100];
-		char fwbaname[100];
+		FILE *fvra;
 
-		unsigned __int32 fmfVersion, SizeY, SizeX;
-		unsigned __int64 bytesPerChunk;
-		char *buf;
+		//char fname[100];
+		//char flogname[100];
+		//char fwbaname[100];
+
+		char fvraname[100];
+
+		//unsigned __int32 fmfVersion, SizeY, SizeX;
+		//unsigned __int64 bytesPerChunk;
+		//char *buf;
 
 		
 	public:
@@ -25,12 +29,14 @@ class FmfWriter
 		int Open();
 		int Close();
 
-		void InitHeader(unsigned __int32 x, unsigned __int32 y);
-		void WriteHeader();
+		//void InitHeader(unsigned __int32 x, unsigned __int32 y);
+		//void WriteHeader();
 		//void WriteFrame(FlyCapture2::TimeStamp st, FlyCapture2::Image img);
-		void WriteFrame(FlyCapture2::Image img);
-		void WriteLog(FlyCapture2::TimeStamp st);
-		void WriteWBA(float left, float right);
+		//void WriteFrame(FlyCapture2::Image img);
+		//void WriteLog(FlyCapture2::TimeStamp st);
+		//void WriteWBA(float left, float right);
+		
+		void WriteVRA(double angle);
 		int IsOpen();
 };
 

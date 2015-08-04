@@ -142,9 +142,11 @@ void FlyWorld::setup()
 	//keyboardHandler* handler = new keyboardHandler();
 	//viewer->addEventHandler(handler);
 
+	osg::Matrix centerRotation = osg::Matrixd::rotate(osg::DegreesToRadians(-90.0), osg::Vec3(0, 0, 1));
+
 	osg::Matrix reflection = osg::Matrixd::scale(-1, 1, 1);
-	osg::Matrix leftRotation = osg::Matrixd::rotate(osg::DegreesToRadians(90.0), osg::Vec3(0, 0, 1));
-	osg::Matrix rightRotation = osg::Matrixd::rotate(osg::DegreesToRadians(-90.0), osg::Vec3(0, 0, 1));
+	osg::Matrix leftRotation = centerRotation * osg::Matrixd::rotate(osg::DegreesToRadians(90.0), osg::Vec3(0, 0, 1));
+	osg::Matrix rightRotation = centerRotation * osg::Matrixd::rotate(osg::DegreesToRadians(-90.0), osg::Vec3(0, 0, 1));
 	osg::Matrix leftCombined = leftRotation*reflection;
 	osg::Matrix rightCombined = rightRotation*reflection;
 
@@ -156,7 +158,7 @@ void FlyWorld::setup()
 	viewer->getCamera()->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 	viewer->getCamera()->setCullingMode(osg::CullSettings::ENABLE_ALL_CULLING);
 
-	viewer->getCamera()->setClearColor(osg::Vec4(0, 0, 0, 1)); // black background
+	//viewer->getCamera()->setClearColor(osg::Vec4(0, 0, 0, 1)); // black background
 
 	viewer->getCamera()->setProjectionMatrix(osg::Matrixd::identity());
 	viewer->setCameraManipulator(NULL);
@@ -224,4 +226,9 @@ osg::ref_ptr<osgViewer::Viewer> FlyWorld::getViewer()
 void FlyWorld::setVisible(bool v)
 {
 	sphereNode->setNodeMask(v ? 0xffffffff : 0x0);
+
+	if (v)
+		viewer->getCamera()->setClearColor(osg::Vec4(0, 0, 0, 1)); // black background
+	else
+		viewer->getCamera()->setClearColor(osg::Vec4(1, 1, 1, 1)); // black background
 }

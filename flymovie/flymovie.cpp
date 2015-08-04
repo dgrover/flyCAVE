@@ -19,7 +19,7 @@ struct {
 bool stream = true;
 bool track = false;
 bool record = false;
-bool laser = false;
+//bool laser = false;
 bool loop = true;
 
 ReaderWriterQueue<Image> q(200);
@@ -88,7 +88,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	//FlyWorld mov("images", "sequence.txt", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
 	
-	FlyWorld mov("images", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
+	FlyWorld mov("..//..//flymetrics//flymovie_patterns//stripe14_images", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
 	printf("%d images read [OK]\n", mov.numImages);
 
 	int imageWidth = 320, imageHeight = 320;
@@ -130,10 +130,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("[OK]\n");
 
-	Serial* SP = new Serial("COM5");    // adjust as needed
+	//Serial* SP = new Serial("COM5");    // adjust as needed
 
-	if (SP->IsConnected())
-		printf("Connecting arduino [OK]\n");
+	//if (SP->IsConnected())
+	//	printf("Connecting arduino [OK]\n");
 
 	int thresh = 200;
 	int body_thresh = 150;
@@ -147,7 +147,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	int track_key_state = 0;
 	int record_key_state = 0;
-	int laser_key_state = 0;
+	//int laser_key_state = 0;
 
 	int count = 0;
 
@@ -156,13 +156,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		#pragma omp section
 		{
-			//double elap_time;
-
 			osg::ref_ptr<osgViewer::Viewer> viewer = mov.getViewer();
 
-			//viewer->setRunFrameScheme(osgViewer::ViewerBase::ON_DEMAND);
-			//viewer->setThreadingModel(osgViewer::ViewerBase::CullDrawThreadPerContext);
-			
 			mov.setVisible(false);
 			mov.imageSequence->seek(0.0);
 			viewer->frame();
@@ -182,7 +177,7 @@ int _tmain(int argc, _TCHAR* argv[])
 							viewer->frame();
 
 							//osg::Timer_t endTick = osg::Timer::instance()->tick();
-							//elap_time = osg::Timer::instance()->delta_m(startTick, endTick);
+							//double elap_time = osg::Timer::instance()->delta_m(startTick, endTick);
 
 							//printf("%f\n", elap_time);
 
@@ -391,23 +386,23 @@ int _tmain(int argc, _TCHAR* argv[])
 					record_key_state = 0;
 
 
-				if (GetAsyncKeyState(VK_F3))
-				{
-					if (!laser_key_state)
-					{
-						laser = !laser;
+				//if (GetAsyncKeyState(VK_F3))
+				//{
+				//	if (!laser_key_state)
+				//	{
+				//		laser = !laser;
 
-						if (laser)
-							SP->WriteData("1", 1);
-						else
-							SP->WriteData("0", 1);
-					}
+				//		if (laser)
+				//			SP->WriteData("1", 1);
+				//		else
+				//			SP->WriteData("0", 1);
+				//	}
 
-					laser_key_state = 1;
+				//	laser_key_state = 1;
 
-				}
-				else
-					laser_key_state = 0;
+				//}
+				//else
+				//	laser_key_state = 0;
 
 				if (GetAsyncKeyState(VK_ESCAPE))
 				{
@@ -437,8 +432,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	//fin.Close();
 	wingcam.Stop();
 
-	if (SP->IsConnected())
-		SP->WriteData("0", 1);
+	//if (SP->IsConnected())
+	//	SP->WriteData("0", 1);
 
 	return 0;
 }

@@ -9,7 +9,7 @@ using namespace FlyCapture2;
 using namespace cv;
 using namespace moodycamel;
 
-#define MAXRECFRAMES 1000
+#define MAXRECFRAMES 2000
 
 struct {
 	bool operator() (cv::Point pt1, cv::Point pt2) { return (pt1.y < pt2.y); }
@@ -18,14 +18,16 @@ struct {
 bool stream = true;
 bool track = false;
 bool record = false;
-bool laser = false;
+//bool laser = false;
 
 ReaderWriterQueue<Image> q(200);
-ReaderWriterQueue<Image> rec(200);
+//ReaderWriterQueue<Image> rec(200);
 ReaderWriterQueue<Mat> disp_frame(1), disp_mask(1);
 
-ReaderWriterQueue<float> leftwba;
-ReaderWriterQueue<float> rightwba;
+//ReaderWriterQueue<float> leftwba;
+//ReaderWriterQueue<float> rightwba;
+
+ReaderWriterQueue<double> vra;
 ReaderWriterQueue<float> wbd(1);
 
 int last = 0, fps = 0;
@@ -88,7 +90,7 @@ int sign(int v)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	FlyWorld vr("images//stripe.bmp", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
+	FlyWorld vr("images//center_t.bmp", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 1.0);
 	osg::ref_ptr<osgViewer::Viewer> viewer = vr.getViewer();
 
 	int imageWidth = 320, imageHeight = 320;
@@ -130,10 +132,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("[OK]\n");
 
-	Serial* SP = new Serial("COM5");    // adjust as needed
+	//Serial* SP = new Serial("COM5");    // adjust as needed
 
-	if (SP->IsConnected())
-		printf("Connecting arduino [OK]\n");
+	//if (SP->IsConnected())
+	//	printf("Connecting arduino [OK]\n");
 
 	int thresh = 200;
 	int body_thresh = 150;
@@ -147,7 +149,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	int track_key_state = 0;
 	int record_key_state = 0;
-	int laser_key_state = 0;
+	//int laser_key_state = 0;
 
 	int count = 0;
 
@@ -164,6 +166,9 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					vr.angle -= sign(wba);
 					viewer->frame();
+
+					if (record)
+						vra.enqueue(vr.angle);
 				}
 
 				if (!stream)
@@ -242,9 +247,9 @@ int _tmain(int argc, _TCHAR* argv[])
 					{
 						putText(frame, to_string(count), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
-						leftwba.enqueue(left_angle);
-						rightwba.enqueue(right_angle);
-						rec.enqueue(img);
+					//	leftwba.enqueue(left_angle);
+					//	rightwba.enqueue(right_angle);
+					//	rec.enqueue(img);
 
 						count++;
 					}
@@ -262,27 +267,20 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		#pragma omp section
 		{
-			Image tImage;
-			float tleft, tright;
-
+			//Image tImage;
+			//float tleft, tright;
+			double tangle;
+			
 			while (true)
 			{
-				if (rec.try_dequeue(tImage))
+				if (vra.try_dequeue(tangle))
 				{
 					if (!fout.IsOpen())
-					{
 						fout.Open();
-						fout.InitHeader(imageWidth, imageHeight);
-						fout.WriteHeader();
-					}
 
-					leftwba.try_dequeue(tleft);
-					rightwba.try_dequeue(tright);
-
-					fout.WriteFrame(tImage);
-					fout.WriteLog(tImage.GetTimeStamp());
-					fout.WriteWBA(tleft, tright);
+					fout.WriteVRA(tangle);
 					fout.nframes++;
+
 				}
 				else
 				{
@@ -292,6 +290,32 @@ int _tmain(int argc, _TCHAR* argv[])
 					if (!stream)
 						break;
 				}
+
+				//if (rec.try_dequeue(tImage))
+				//{
+				//	if (!fout.IsOpen())
+				//	{
+				//		fout.Open();
+				//		fout.InitHeader(imageWidth, imageHeight);
+				//		fout.WriteHeader();
+				//	}
+
+				//	leftwba.try_dequeue(tleft);
+				//	rightwba.try_dequeue(tright);
+
+				//	fout.WriteFrame(tImage);
+				//	fout.WriteLog(tImage.GetTimeStamp());
+				//	fout.WriteWBA(tleft, tright);
+				//	fout.nframes++;
+				//}
+				//else
+				//{
+				//	if (!record && fout.IsOpen())
+				//		fout.Close();
+
+				//	if (!stream)
+				//		break;
+				//}
 			}
 		}
 
@@ -359,23 +383,23 @@ int _tmain(int argc, _TCHAR* argv[])
 					record_key_state = 0;
 
 
-				if (GetAsyncKeyState(VK_F3))
-				{
-					if (!laser_key_state)
-					{
-						laser = !laser;
+				//if (GetAsyncKeyState(VK_F3))
+				//{
+				//	if (!laser_key_state)
+				//	{
+				//		laser = !laser;
 
-						if (laser)
-							SP->WriteData("1", 1);
-						else
-							SP->WriteData("0", 1);
-					}
+				//		if (laser)
+				//			SP->WriteData("1", 1);
+				//		else
+				//			SP->WriteData("0", 1);
+				//	}
 
-					laser_key_state = 1;
+				//	laser_key_state = 1;
 
-				}
-				else
-					laser_key_state = 0;
+				//}
+				//else
+				//	laser_key_state = 0;
 
 				if (GetAsyncKeyState(VK_ESCAPE))
 				{
@@ -401,8 +425,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	//fin.Close();
 	wingcam.Stop();
 
-	if (SP->IsConnected())
-		SP->WriteData("0", 1);
+	//if (SP->IsConnected())
+	//	SP->WriteData("0", 1);
 
 	return 0;
 }

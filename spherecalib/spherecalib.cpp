@@ -6,7 +6,7 @@ int yOffset = 0;
 double viewWidth = 912/3;
 double viewHeight =  1140*2;
 
-double radius = 2.0;
+double radius = 1.0;
 double defaultDistance = (radius + 8.0);
 double centerDistance = defaultDistance;
 double sideDistance = defaultDistance;

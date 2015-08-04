@@ -10,8 +10,8 @@ void TextureUpdateCallback::operator()(osg::Node*, osg::NodeVisitor* nv)
 
 	if (nv->getFrameStamp())
 	{
-		float r = CV_PI / 180.0 * angle;
-		texMat->setMatrix(osg::Matrix::translate(r, 0.0f, 0.0f));
+		float r = osg::DegreesToRadians(angle) / (2 * CV_PI);				// convert angle to radians and scale to [0 1] interval for texture translation
+		texMat->setMatrix(osg::Matrix::translate(r, 0.0f, 0.0f));			// translate texture by r
 	}
 }
 
