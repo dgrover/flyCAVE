@@ -36,7 +36,7 @@ class FmfWriter
 		//void WriteLog(FlyCapture2::TimeStamp st);
 		//void WriteWBA(float left, float right);
 		
-		void WriteVRA(double angle);
+		void WriteVRA(float left, float right, double angle);
 		int IsOpen();
 };
 

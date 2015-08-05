@@ -20,6 +20,19 @@ bool track = false;
 bool record = false;
 bool laser = false;
 
+struct wba
+{
+	float leftwba;
+	float rightwba;
+};
+
+struct save_data
+{
+	float leftwba;
+	float rightwba;
+	double vra;
+};
+
 ReaderWriterQueue<Image> q(200);
 //ReaderWriterQueue<Image> rec(200);
 ReaderWriterQueue<Mat> disp_frame(1), disp_mask(1);
@@ -27,8 +40,11 @@ ReaderWriterQueue<Mat> disp_frame(1), disp_mask(1);
 //ReaderWriterQueue<float> leftwba;
 //ReaderWriterQueue<float> rightwba;
 
-ReaderWriterQueue<double> vra;
-ReaderWriterQueue<float> wbd(1);
+ReaderWriterQueue<wba> wb(1);
+ReaderWriterQueue<save_data> data_queue;
+
+//ReaderWriterQueue<double> vra;
+//ReaderWriterQueue<float> wbd(1);
 
 int last = 0, fps = 0;
 
@@ -154,17 +170,39 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		#pragma omp section
 		{
-			float wba;
+			//float wba;
+			wba twb;
+			save_data tdata;
+
+			double tangle = 0.0;
 
 			while (true)
 			{
-				if (wbd.try_dequeue(wba))
+				if (wb.try_dequeue(twb))
 				{
-					vr.angle -= sign(wba);
+					float wbd = twb.leftwba - twb.rightwba;
+					int dir = sign(wbd);
+
+					tangle -= dir;
+
+					if (tangle < 0.0)
+						tangle = 359.0;
+
+					if (tangle > 359.0)
+						tangle = 0.0;
+					
+					vr.angle = tangle;
 					viewer->frame();
 
 					if (record)
-						vra.enqueue(vr.angle);
+					{
+						tdata.leftwba = twb.leftwba;
+						tdata.rightwba = twb.rightwba;
+						tdata.vra = tangle;
+
+						data_queue.enqueue(tdata);
+					}
+						
 				}
 
 				if (!stream)
@@ -176,7 +214,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			Image img;
 			Mat frame, mask, body_mask;
-			float left_angle, right_angle;
+			//float left_angle, right_angle;
+
+			wba fly_angle;
 
 			while (true)
 			{
@@ -196,8 +236,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 					mask &= body_mask;
 
-					left_angle = 0;
-					right_angle = 0;
+					fly_angle.leftwba = 0;
+					fly_angle.rightwba = 0;
 
 					if (track)
 					{
@@ -228,9 +268,9 @@ int _tmain(int argc, _TCHAR* argv[])
 								line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
 
 								if (hull[i].front().x < center.x)
-									left_angle = angleBetween(hull[i].front(), hull[i].back(), center);
+									fly_angle.leftwba = angleBetween(hull[i].front(), hull[i].back(), center);
 								else
-									right_angle = angleBetween(hull[i].front(), hull[i].back(), center);
+									fly_angle.rightwba = angleBetween(hull[i].front(), hull[i].back(), center);
 
 							}
 						}
@@ -250,7 +290,9 @@ int _tmain(int argc, _TCHAR* argv[])
 						count++;
 					}
 
-					wbd.try_enqueue(left_angle - right_angle);
+					//wbd.try_enqueue(left_angle - right_angle);
+					wb.try_enqueue(fly_angle);
+
 					disp_frame.try_enqueue(frame.clone());
 					disp_mask.try_enqueue(mask.clone());
 
@@ -265,16 +307,18 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			//Image tImage;
 			//float tleft, tright;
-			double tangle;
+			//double tangle;
 			
+			save_data out_data;
+
 			while (true)
 			{
-				if (vra.try_dequeue(tangle))
+				if (data_queue.try_dequeue(out_data))
 				{
 					if (!fout.IsOpen())
 						fout.Open();
 
-					fout.WriteVRA(tangle);
+					fout.WriteVRA(out_data.leftwba, out_data.rightwba, out_data.vra);
 					fout.nframes++;
 
 				}

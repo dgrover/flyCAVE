@@ -138,9 +138,9 @@ int FmfWriter::Close()
 //	fprintf(fwba, "%d %f %f\n", nframes, left, right);
 //}
 
-void FmfWriter::WriteVRA(double angle)
+void FmfWriter::WriteVRA(float left, float right, double angle)
 {
-	fprintf(fvra, "%d %f\n", nframes, angle);
+	fprintf(fvra, "%d %f %f %f\n", nframes, left, right, angle);
 }
 
 int FmfWriter::IsOpen()
