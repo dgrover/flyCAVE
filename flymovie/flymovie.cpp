@@ -19,7 +19,7 @@ struct {
 bool stream = true;
 bool track = false;
 bool record = false;
-//bool laser = false;
+bool laser = false;
 bool loop = true;
 
 ReaderWriterQueue<Image> q(200);
@@ -86,9 +86,9 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//FlyWorld mov("images", "sequence.txt", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
+	//FlyWorld mov("images", "sequence.txt", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 1.0);
 	
-	FlyWorld mov("..//..//flymetrics//flymovie_patterns//stripe14_images", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 2.0);
+	FlyWorld mov("images", "..//displaySettings_flycave1.txt", 912 / 3, 1140 * 2, 1920, 1.0);
 	printf("%d images read [OK]\n", mov.numImages);
 
 	int imageWidth = 320, imageHeight = 320;
@@ -130,10 +130,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("[OK]\n");
 
-	//Serial* SP = new Serial("COM5");    // adjust as needed
+	Serial* SP = new Serial("COM5");    // adjust as needed
 
-	//if (SP->IsConnected())
-	//	printf("Connecting arduino [OK]\n");
+	if (SP->IsConnected())
+		printf("Connecting arduino [OK]\n");
 
 	int thresh = 200;
 	int body_thresh = 150;
@@ -145,10 +145,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Point2f center(imageWidth / 2, imageHeight / 2);
 
-	int track_key_state = 0;
-	int record_key_state = 0;
-	//int laser_key_state = 0;
-
 	int count = 0;
 
 	//Press [F1] to start/stop recording. Press [ESC] to exit
@@ -158,15 +154,17 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			osg::ref_ptr<osgViewer::Viewer> viewer = mov.getViewer();
 
-			mov.setVisible(false);
-			mov.imageSequence->seek(0.0);
-			viewer->frame();
+			//mov.setVisible(false);
+			//mov.imageSequence->seek(0.0);
+			//viewer->frame();
 
 			while (true)
 			{
 				if (record)
 				{
-					for (int i = 1; i < mov.numImages; i++)
+					mov.setVisible(true);
+
+					for (int i = 0; i < mov.numImages; i++)
 					{
 						//for (int j = 0; j < mov.sequence[i]; j++)
 						for (int j = 0; j < N; j++)
@@ -187,11 +185,17 @@ int _tmain(int argc, _TCHAR* argv[])
 					if (!loop)
 					{
 						record = false;
-						mov.setVisible(false);
-						mov.imageSequence->seek(0.0);
-						viewer->frame();
+						//mov.setVisible(false);
+						//mov.imageSequence->seek(0.0);
+						//viewer->frame();
 					}
 
+				}
+				else
+				{
+					mov.setVisible(false);
+					mov.imageSequence->seek(0.0);
+					viewer->frame();
 				}
 				
 				if (!stream)
@@ -357,6 +361,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		#pragma omp section
 		{
+			int track_key_state = 0;
+			int record_key_state = 0;
+			int laser_key_state = 0;
+
 			while (true)
 			{
 
@@ -377,7 +385,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						record = !record;
 						count = 0;
 
-						mov.setVisible(record);
+						//mov.setVisible(record);
 					}
 
 					record_key_state = 1;
@@ -386,23 +394,23 @@ int _tmain(int argc, _TCHAR* argv[])
 					record_key_state = 0;
 
 
-				//if (GetAsyncKeyState(VK_F3))
-				//{
-				//	if (!laser_key_state)
-				//	{
-				//		laser = !laser;
+				if (GetAsyncKeyState(VK_F3))
+				{
+					if (!laser_key_state)
+					{
+						laser = !laser;
 
-				//		if (laser)
-				//			SP->WriteData("1", 1);
-				//		else
-				//			SP->WriteData("0", 1);
-				//	}
+						if (laser)
+							SP->WriteData("1", 1);
+						else
+							SP->WriteData("0", 1);
+					}
 
-				//	laser_key_state = 1;
+					laser_key_state = 1;
 
-				//}
-				//else
-				//	laser_key_state = 0;
+				}
+				else
+					laser_key_state = 0;
 
 				if (GetAsyncKeyState(VK_ESCAPE))
 				{
@@ -417,7 +425,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						count = 0;
 
 						record = false;
-						mov.setVisible(false);
+						//mov.setVisible(false);
 					}
 				}
 
