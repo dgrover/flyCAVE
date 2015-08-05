@@ -90,7 +90,7 @@ int sign(int v)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	FlyWorld vr("images//two_t.bmp", "..//displaySettings_flycave1.txt", 912 / 3, 1140 * 2, 1920, 1.0);
+	FlyWorld vr("images//center_t.bmp", "..//displaySettings_flycave1.txt", 912 / 3, 1140 * 2, 1920, 1.0);
 	osg::ref_ptr<osgViewer::Viewer> viewer = vr.getViewer();
 
 	int imageWidth = 320, imageHeight = 320;
