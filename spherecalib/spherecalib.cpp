@@ -34,7 +34,7 @@ int centerVPOffset = 0;
 osg::Vec4 backgroundColor = osg::Vec4(0, 0, 0, 1);
 osg::Vec3d up = osg::Vec3d(0, 0, 1); //up vector
 const char* imageFileName = "images//numberline.gif";//"vert_stripe.bmp";
-const char* displayFile = "..//displaySettings.txt";
+const char* displayFile = "..//displaySettings_flycave2.txt";
 osgViewer::Viewer viewer;
 
 void printInfo();
