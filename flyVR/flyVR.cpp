@@ -9,13 +9,13 @@ using namespace FlyCapture2;
 using namespace cv;
 using namespace moodycamel;
 
-#define MAXRECFRAMES 4000
+#define MAXRECFRAMES 2000	//20 sec
 
 struct {
 	bool operator() (cv::Point pt1, cv::Point pt2) { return (pt1.y < pt2.y); }
 } mycomp;
 
-bool stream = true;
+bool stream = false;
 bool track = false;
 bool record = false;
 bool laser = false;
@@ -74,7 +74,9 @@ void OnImageGrabbed(Image* pImage, const void* pCallbackData)
 	last = pImage->GetTimeStamp().cycleCount;
 
 	img.DeepCopy(pImage);
-	q.enqueue(img);
+	
+	if (stream)
+		q.enqueue(img);
 
 	return;
 }
@@ -99,14 +101,14 @@ float angleBetween(Point v1, Point v2, Point c)
 		return acos(a) * 180 / CV_PI;
 }
 
-int sign(int v)
+int sign(int v)  
 {
 	return v > 0 ? 1 : -1;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	FlyWorld vr("images//center_t.bmp", "..//displaySettings_flycave2.txt", 912 / 3, 1140 * 2, 1920, 1.0);
+	FlyWorld vr("images//stripe.bmp", "..//displaySettings_flycave1.txt", 912 / 3, 1140 * 2, 1920, 1.0);
 	osg::ref_ptr<osgViewer::Viewer> viewer = vr.getViewer();
 
 	int imageWidth = 320, imageHeight = 320;
@@ -164,6 +166,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	Point2f center(imageWidth / 2, imageHeight / 2);
 
 	int count = 0;
+	stream = true;
 
 	//Press [F1] to start/stop recording. Press [ESC] to exit
 	#pragma omp parallel sections num_threads(5)
@@ -201,6 +204,8 @@ int _tmain(int argc, _TCHAR* argv[])
 						tdata.vra = tangle;
 
 						data_queue.enqueue(tdata);
+
+						count++;
 					}
 						
 				}
@@ -280,15 +285,15 @@ int _tmain(int argc, _TCHAR* argv[])
 					putText(frame, to_string(q.size_approx()), Point((imageWidth - 50), 20), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
 					if (record)
-					{
+					//{
 						putText(frame, to_string(count), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
 
 					//	leftwba.enqueue(left_angle);
 					//	rightwba.enqueue(right_angle);
 					//	rec.enqueue(img);
 
-						count++;
-					}
+					//	count++;
+					//}
 
 					//wbd.try_enqueue(left_angle - right_angle);
 					wb.try_enqueue(fly_angle);
@@ -455,8 +460,8 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					if (count == MAXRECFRAMES)
 					{
-						count = 0;
 						record = false;
+						count = 0;
 					}
 				}
 			}

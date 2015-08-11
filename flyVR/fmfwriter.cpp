@@ -71,6 +71,8 @@ int FmfWriter::Open()
 		return -1;
 	}
 
+	nframes = 0;
+
 	return 1;
 
 }
