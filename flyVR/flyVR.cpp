@@ -164,6 +164,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
 
 	Point2f center(imageWidth / 2, imageHeight / 2);
+	Point2f bottom(imageWidth / 2, imageHeight);
 
 	int count = 0;
 	stream = true;
@@ -270,12 +271,17 @@ int _tmain(int argc, _TCHAR* argv[])
 								std::sort(hull[i].begin(), hull[i].end(), mycomp);
 
 								line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
-								line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
+								//line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
+
+								//if (hull[i].front().x < center.x)
+								//	fly_angle.leftwba = angleBetween(hull[i].front(), hull[i].back(), center);
+								//else
+								//	fly_angle.rightwba = angleBetween(hull[i].front(), hull[i].back(), center);
 
 								if (hull[i].front().x < center.x)
-									fly_angle.leftwba = angleBetween(hull[i].front(), hull[i].back(), center);
+									fly_angle.leftwba = angleBetween(hull[i].front(), bottom, center);
 								else
-									fly_angle.rightwba = angleBetween(hull[i].front(), hull[i].back(), center);
+									fly_angle.rightwba = angleBetween(hull[i].front(), bottom, center);
 
 							}
 						}

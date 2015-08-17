@@ -144,6 +144,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
 
 	Point2f center(imageWidth / 2, imageHeight / 2);
+	Point2f bottom(imageWidth / 2, imageHeight);
 
 	int count = 0;
 
@@ -256,12 +257,17 @@ int _tmain(int argc, _TCHAR* argv[])
 								std::sort(hull[i].begin(), hull[i].end(), mycomp);
 
 								line(frame, hull[i].front(), center, Scalar(255, 255, 255), 1, LINE_AA);
-								line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
+								//line(frame, hull[i].back(), center, Scalar(255, 255, 255), 1, LINE_AA);
+
+								//if (hull[i].front().x < center.x)
+								//	left_angle = angleBetween(hull[i].front(), hull[i].back(), center);
+								//else
+								//	right_angle = angleBetween(hull[i].front(), hull[i].back(), center);
 
 								if (hull[i].front().x < center.x)
-									left_angle = angleBetween(hull[i].front(), hull[i].back(), center);
+									left_angle = angleBetween(hull[i].front(), bottom, center);
 								else
-									right_angle = angleBetween(hull[i].front(), hull[i].back(), center);
+									right_angle = angleBetween(hull[i].front(), bottom, center);
 
 							}
 						}
