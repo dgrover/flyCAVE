@@ -86,8 +86,6 @@ float angleBetween(Point v1, Point v2, Point c)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//FlyWorld mov("images", "sequence.txt", "..//displaySettings.txt", 912 / 3, 1140 * 2, 1920, 1.0);
-	
 	FlyWorld mov("images", "..//displaySettings_flycave1.txt", 912 / 3, 1140 * 2, 1920, 1.0);
 	printf("%d images read [OK]\n", mov.numImages);
 
@@ -117,7 +115,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	error = busMgr.GetCameraFromIndex(0, &guid);
 	error = wingcam.Connect(guid);
 	error = wingcam.SetCameraParameters(imageWidth, imageHeight);
-	error = wingcam.SetProperty(SHUTTER, 4.887);
+	error = wingcam.SetProperty(SHUTTER, 4.989);
 	error = wingcam.SetProperty(GAIN, 0.0);
 	//error = wingcam.Start();
 	error = wingcam.cam.StartCapture(OnImageGrabbed);
@@ -135,7 +133,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (SP->IsConnected())
 		printf("Connecting arduino [OK]\n");
 
-	int thresh = 200;
+	int thresh = 210;
 	int body_thresh = 150;
 
 	Mat element = getStructuringElement(MORPH_RECT, Size(3, 3), Point(1, 1));

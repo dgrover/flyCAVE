@@ -101,9 +101,9 @@ float angleBetween(Point v1, Point v2, Point c)
 		return acos(a) * 180 / CV_PI;
 }
 
-int sign(int v)  
+int sign(float v)  
 {
-	return v > 0 ? 1 : -1;
+	return v > 0.0 ? 1 : -1;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -137,7 +137,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	error = busMgr.GetCameraFromIndex(0, &guid);
 	error = wingcam.Connect(guid);
 	error = wingcam.SetCameraParameters(imageWidth, imageHeight);
-	error = wingcam.SetProperty(SHUTTER, 4.887);
+	error = wingcam.SetProperty(SHUTTER, 4.989);
 	error = wingcam.SetProperty(GAIN, 0.0);
 	//error = wingcam.Start();
 	error = wingcam.cam.StartCapture(OnImageGrabbed);
@@ -155,7 +155,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (SP->IsConnected())
 		printf("Connecting arduino [OK]\n");
 
-	int thresh = 200;
+	int thresh = 210;
 	int body_thresh = 150;
 
 	Mat element = getStructuringElement(MORPH_RECT, Size(3, 3), Point(1, 1));
@@ -180,12 +180,14 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			double tangle = 0.0;
 
+			float last_wbd = 0.0;
+
 			while (true)
 			{
 				if (wb.try_dequeue(twb))
 				{
 					float wbd = twb.leftwba - twb.rightwba;
-					int dir = sign(wbd);
+					int dir = sign(wbd - last_wbd);
 
 					tangle -= dir;
 
