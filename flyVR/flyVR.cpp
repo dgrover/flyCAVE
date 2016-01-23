@@ -101,10 +101,10 @@ float angleBetween(Point v1, Point v2, Point c)
 		return acos(a) * 180 / CV_PI;
 }
 
-int sign(float v)  
-{
-	return v > 0.0 ? 1 : -1;
-}
+//int sign(float v)  
+//{
+//	return v > 0.0 ? 1 : -1;
+//}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -179,17 +179,19 @@ int _tmain(int argc, _TCHAR* argv[])
 			save_data tdata;
 
 			double tangle = 0.0;
-
-			float last_wbd = 0.0;
+			float wbd;
 
 			while (true)
 			{
 				if (wb.try_dequeue(twb))
 				{
-					float wbd = twb.leftwba - twb.rightwba;
-					int dir = sign(wbd - last_wbd);
-
-					tangle -= dir;
+					if (twb.leftwba == 0 || twb.rightwba == 0)
+						tangle++;
+					else
+					{
+						wbd = twb.leftwba - twb.rightwba;
+						tangle -= wbd;
+					}
 
 					if (tangle < 0.0)
 						tangle = 359.0;
@@ -281,9 +283,23 @@ int _tmain(int argc, _TCHAR* argv[])
 								//	fly_angle.rightwba = angleBetween(hull[i].front(), hull[i].back(), center);
 
 								if (hull[i].front().x < center.x)
-									fly_angle.leftwba = angleBetween(hull[i].front(), bottom, center);
+								{
+									float left = angleBetween(hull[i].front(), bottom, center);
+
+									if (left < 90.0)
+										fly_angle.leftwba = 0.0;
+									else
+										fly_angle.leftwba = left;
+								}
 								else
-									fly_angle.rightwba = angleBetween(hull[i].front(), bottom, center);
+								{
+									float right = angleBetween(hull[i].front(), bottom, center);
+
+									if (right < 90.0)
+										fly_angle.rightwba = 0.0;
+									else
+										fly_angle.rightwba = right;
+								}
 
 							}
 						}
