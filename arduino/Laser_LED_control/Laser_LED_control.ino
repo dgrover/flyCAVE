@@ -6,9 +6,9 @@ int Load_DAC=9;
 
 unsigned int a=0;
 unsigned int b=0;
+unsigned int serialInLASER, serialInLED;
 
-unsigned int serialLed;
-unsigned int serialLaser;
+int incomingByte = 0;   // for incoming serial data
 
 void setup() {
   
@@ -44,55 +44,63 @@ void setup() {
   b = 0;
   a = 0;
   setVoltages(a,b);  //LED, LASER
-  //set_V_LASER(a);
+  //set_V_LED(a);
+  //set_V_LASER(b);
 
   //init serial
   Serial.begin(19200);
   
+ serialInLED = 0;
+ serialInLASER = 0; 
 }
 
 void loop() {
-
- if (Serial.available() > 0)
- {
-    serialLed = Serial.parseInt();
-    serialLaser = Serial.parseInt();
+  if (Serial.available() > 0)
+  {
+    incomingByte = Serial.read(); 
     
-    setVoltages(serialLed,serialLaser);     //LED, LASER 
+    //serialInLED = Serial.parseInt();
+    //serialInLASER = Serial.parseInt();
+
+    if (incomingByte == 48)
+    {
+      serialInLED = 0;
+      serialInLASER = 0;
+      setVoltages(serialInLED,serialInLASER);     //LED, LASER 
+
+    }
+    else if (incomingByte == 49)
+    {
+      serialInLED = 1648;
+      serialInLASER = 0;
+      setVoltages(serialInLED,serialInLASER);     //LED, LASER 
+
+    }
+    else if (incomingByte == 50)
+    {
+      serialInLASER = 1648;
+      setVoltages(serialInLED,serialInLASER);     //LED, LASER 
+      delay(500);
+      serialInLASER = 0;
+      setVoltages(serialInLED,serialInLASER);     //LED, LASER */
+
+//     int NumberTrials = 0;
+//     while(NumberTrials < 5)
+//     {
+//        serialInLASER = 1648;
+//        setVoltages(serialInLED,serialInLASER);     //LED, LASER 
+//        delay(500);
+//        serialInLASER = 0;
+//        setVoltages(serialInLED,serialInLASER); 
+//        delay(30000);
+//        NumberTrials++;
+//     }
+    }
     
-    //set_V_LED(serialLed);
-    
- }// end if serial
 
-
-//while (Serial.available() > 0) {
-//    int inChar = Serial.read();
-//    if (isDigit(inChar)) {
-//      // convert the incoming byte to a char
-//      // and add it to the string:
-//      inString += (char)inChar;
-//    }
-//    
-//    // if you get a newline, print the string,
-//    // then the string's value:
-//    
-//    if (inChar == '\n') {
-//      Serial.print("Value:");
-//      Serial.println(inString.toInt());
-//      Serial.print("String: ");
-//      Serial.println(inString);
-//      // clear the string for new input:
-//     
-//      set_V_LED(inString.toInt());
-//      inString = "";
-//
-//    }
-//  }
-
-
-
-
-}
+    //set_V_LED(serialInLED);
+  }// end if serial
+}    
 
 /*
  * setVoltages assumes the values laser and led are unsigned values
@@ -107,20 +115,22 @@ void setVoltages(unsigned int led, unsigned int laser){
   temp_LASER |= laser;
   
   //write LED value to output
+  digitalWrite(Load_DAC, HIGH);
   digitalWrite(Chip_Select, LOW);   //load
   SPI.transfer16(temp_LED);
   digitalWrite(Chip_Select, HIGH);
   //load value into output reg
   digitalWrite(Load_DAC, LOW);
-  digitalWrite(Load_DAC, HIGH);
+  
 
   //write LASER value to output
+  digitalWrite(Load_DAC, HIGH);
   digitalWrite(Chip_Select, LOW);
   SPI.transfer16(temp_LASER);
   digitalWrite(Chip_Select, HIGH);
   //load value into output reg  
   digitalWrite(Load_DAC, LOW);
-  digitalWrite(Load_DAC, HIGH);  
+    
   
 }// end setCurrent
 
@@ -164,4 +174,3 @@ void set_V_LED(unsigned int led){
   digitalWrite(Load_DAC, HIGH);
 
 } // end set_V_LED
-
